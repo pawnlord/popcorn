@@ -16,6 +16,8 @@ extern void keyboard_handler(void);
 extern char read_port(unsigned short port);
 extern void write_port(unsigned short port, unsigned short data);
 extern void load_idt(unsigned long *idt_ptr);
+extern unsigned char *get_heap_space(void);
+extern unsigned char *get_stack_space(void);
 
 char *vidptr = (char*)0xb8000;
 unsigned int curr = 0;
@@ -92,7 +94,23 @@ void print(const char *str){
 		++j;
 	}
 }
-
+void print_int(int num){
+	int count = 0;
+	int temp = num;
+	int temp_curr = curr;
+	do{
+		temp = temp / 10;
+		count+=1;
+	} while(temp > 0);
+	curr += count*2;
+	while(count > 0){
+		count--;
+		char dig = (num % 10)+'0';
+		vidptr[temp_curr + (count * 2)] = dig;
+		vidptr[temp_curr + (count * 2) + 1] = 0x07;
+		num = num / 10;
+	}
+}
 void print_nl(void)
 {
 	static unsigned int line_size = BYTES_PER_ELM * CLMN_IN_LN;
@@ -137,6 +155,9 @@ void kmain(void)
 	clear();
 	print(str);
 	print_nl();
+	print_int((int) get_heap_space());
+	print_nl();
+	print_int((int) get_stack_space());
 	print_nl();
 	
 	idt_init();
