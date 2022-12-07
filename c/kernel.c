@@ -10,8 +10,8 @@
 #define BACKSPACE 0x0E
 
 #include "keyboard_map.h"
+#include "stdlib.h"
 
-extern unsigned char keyboard_map[128];
 extern void keyboard_handler(void);
 extern char read_port(unsigned short port);
 extern void write_port(unsigned short port, unsigned short data);
@@ -151,8 +151,9 @@ void keyboard_handler_main(void){
 
 void kmain(void)
 {
-        const char *str = "This is a a kernel\0";
-	clear();
+        const char *str = "popcorn colonel V1.0.0\0";
+	mem_init();
+        clear();
 	print(str);
 	print_nl();
 	print_int((int) get_heap_space());
