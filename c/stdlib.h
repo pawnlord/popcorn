@@ -20,14 +20,13 @@ typedef struct buddy{
   struct buddy *children;
 } buddy_t; // Smallest block is 1 page, or 4096 bytes
 
-typedef struct{
-  buddy_t *high_lvl;
-} buddy_head;
 
 #define META_SZ sizeof(block_info_t)
 
 void mem_init(void);
 
 void *kmalloc(size_t size);
+
+unsigned char *read_brk(void);
 
 void kfree(void *ptr);

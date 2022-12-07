@@ -1,9 +1,12 @@
 /**
    Various functions for memory management
 */
+#include "display.h"
 #include "stdlib.h"
 
+
 extern unsigned char *get_heap_space(void);
+extern unsigned char *get_init_brk(void);
 extern void load_page_directory(unsigned int*);
 extern void enable_paging();
 
@@ -12,7 +15,7 @@ uint32_t page_directory[1024] __attribute__((aligned(4096)));
 //uint32_t first_page_table[1024] __attribute__((aligned(4096)));
 
 unsigned char *heap_start;
-extern unsigned char *brk_ptr;
+unsigned char *brk_ptr;
 
 buddy_t *head;
 
@@ -27,6 +30,10 @@ unsigned char *ksbrk(size_t sz, int align){
 	}
 	brk_ptr += sz + offset;
 	return ptr;
+}
+
+unsigned char *read_brk(void){
+	return brk_ptr;
 }
 
 // generates identity paging for the given list of addresses
@@ -45,7 +52,12 @@ void idpage(uint32_t start_addr, uint32_t size, uint32_t **pg_tbl_ptr){
 
 void mem_init(){
 	
-	
+	brk_ptr = get_init_brk();
+	print("brk pointer pointer initial:");
+	print_int((int) &brk_ptr);
+	print("brk pointer initial:");
+	print_int((int) brk_ptr);
+	print_nl();
 	for(int i = 0; i < 1024; i++)
 	{
                 // This sets the following flags to the pages:
@@ -54,14 +66,19 @@ void mem_init(){
                 //   Not Present: The page table is not
 		page_directory[i] = 0x00000002;
 	}
+
 	uint32_t *first_page_table;
-	idpage(0x00000000, 1024, &first_page_table);
 	// Sets up identity page for 0x00000000-0x00000fff
+	idpage(0x00000000, 1024, &first_page_table);
+
 	
-	page_directory[0] = ((uint32_t)first_page_table) | 3;
+       	page_directory[0] = ((uint32_t)first_page_table) | 3;
 	load_page_directory((unsigned int*)page_directory);
 	enable_paging();
-	
+
+	print("brk pointer after id paging:");
+	print_int((int) brk_ptr);
+	print_nl();	
 }
 
 /*
