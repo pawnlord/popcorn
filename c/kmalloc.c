@@ -44,16 +44,23 @@ unsigned char *ksbrk(size_t sz, int align){
 
 void map_page_tables(uint32_t page_dir[], uint32_t vaddr, uint32_t raddr, size_t len){
 	uint32_t num_tables = (len / (0x400000)) + (len%(0x400000))?1:0; // slow AND useless
-	vaddr = vaddr & ~0xFFF;
-	raddr = raddr & ~0xFFF;
 	uint32_t first_entry = (vaddr & (0x3FF<<22))>>22;
+
+        vaddr = vaddr & ~0xFFF;
+	raddr = raddr & ~0xFFF;
+
+	
 	for(int i = 0; i < num_tables; i++){
-		uint32_t *table;
+		uint32_t *table = (uint32_t*)ksbrk(4096, 4096);
 	        for(int j = 0; j < 1024 && j < len; j++){
-			table[j] = ((raddr + 0x1000*j) | 0x111);
+			if(j == 515){
+				print_int(((raddr + 0x1000*j) | 0b111));
+			}
+			table[j] = ((raddr + 0x1000*j) | 0b111);
 		}
+		
 		page_directory[first_entry+i] = (uint32_t)table;
-		len -= 0x400*0x1000;
+		len -= 0x400000;
 	}
 }
 
@@ -75,27 +82,18 @@ void idpage(uint32_t addr, uint32_t size, uint32_t page_dir[]){
 
 uint32_t *v2raddr(uint32_t page_dir[], uint32_t vaddr) {
 	uint32_t *table = (uint32_t*)page_dir[(vaddr & (0x3FF<<22))>>22];
+	print("tbl_no ");
+	print_int((vaddr & (0x3FF<<22))>>22);
+	print_nl();
+	print("tbl_ent ");
+	print_int((vaddr & (0x3FF<<12))>>12);
+	print_nl();
 	return  (uint32_t*)table[(vaddr & (0x3FF<<12))>>12];
 }
 
 void mem_init(){
 	
 	brk_ptr = get_heap_space();
-	print("brk_ptr initial: ");
-	print_int((int) brk_ptr);
-	print_nl();
-	print("&brk_ptr initial: ");
-	print_int((int) &brk_ptr);
-	print_nl();
-	print("stack start: ");
-	print_int((int) get_stack_space());
-	print_nl();
-	print("stack current: ");
-	print_int((int) get_stack_ptr());
-	print_nl();
-	print("kernel start: ");
-	print_int((int) get_kernel_start());
-	print_nl();
 	for(int i = 0; i < 1024; i++)
 	{
                 // This sets the following flags to the pages:
@@ -115,27 +113,9 @@ void mem_init(){
 	load_page_directory((unsigned int*)page_directory);
 	enable_paging();
 
-        print("brk");
-	print_int((uint32_t)brk_ptr);
-	print_nl();
 
 	uint32_t brkpp = (uint32_t)&brk_ptr;
-	print("brkpp");
-	print_int(brkpp);
-	print_nl();
-	
-	print("value at brkpp");
-	print_int(*((uint32_t *)brkpp));
-	print_nl();
-
-        print("mapped brkpp");
-	print_int((brkpp & 0x3FFFFF));
-	print_nl();
-	
-	print("pointer at map");
-	print_int((uint32_t)v2raddr(page_directory, (brkpp & 0x3FFFFF) + 0xC0000000));
-	print_nl();
-	
+	kasserteq(brkpp | 0b110, (uint32_t)v2raddr(page_directory, (brkpp & 0x3FFFFF) + 0xC0000000 - 0x100000));
 }
 
 /*

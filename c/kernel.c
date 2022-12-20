@@ -17,6 +17,7 @@ extern void load_idt(unsigned long *idt_ptr);
 extern unsigned char *get_heap_space(void);
 extern unsigned char *get_stack_space(void);
 
+char press_flag = 0; // alternates between 0 and 1 as keyboard is pressed
 
 /* IDT/interrupt functions */
 struct IDT_entry{
@@ -87,6 +88,7 @@ void keyboard_handler_main(void){
 		keycode = read_port(KBRD_DATA);
 		if(keycode < 0)
 			return;
+		press_flag = !press_flag;
 		if(keycode == ENTER_KEY){
 			print_nl();
 			return;

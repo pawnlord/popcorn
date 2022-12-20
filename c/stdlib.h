@@ -30,3 +30,9 @@ void mem_init(void);
 void *kmalloc(size_t size);
 
 void kfree(void *ptr);
+
+/*
+  kernel level testing
+ */
+
+void kasserteq(uint32_t val1, uint32_t val2);
