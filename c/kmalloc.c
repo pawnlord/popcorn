@@ -6,13 +6,23 @@
 
 
 extern unsigned char *get_heap_space(void);
-extern unsigned char *get_init_brk(void);
+extern unsigned char *get_stack_space(void);
+extern unsigned char *get_stack_ptr(void);
+extern unsigned char *get_kernel_start(void);
 extern void load_page_directory(unsigned int*);
 extern void enable_paging();
 
 // Paging definitions
 uint32_t page_directory[1024] __attribute__((aligned(4096)));
 //uint32_t first_page_table[1024] __attribute__((aligned(4096)));
+
+/*
+  notes on page tables:
+  every page table reprensents 1024*4096 = 4.19 megabytes of data
+  ksbrk works on id pages to store page tables. it is 
+  kernel is mapped to 0xC0000000-0xC0400000 for all tables
+  
+ */
 
 unsigned char *heap_start;
 unsigned char *brk_ptr;
@@ -32,53 +42,100 @@ unsigned char *ksbrk(size_t sz, int align){
 	return ptr;
 }
 
-unsigned char *read_brk(void){
-	return brk_ptr;
+void map_page_tables(uint32_t page_dir[], uint32_t vaddr, uint32_t raddr, size_t len){
+	uint32_t num_tables = (len / (0x400000)) + (len%(0x400000))?1:0; // slow AND useless
+	vaddr = vaddr & ~0xFFF;
+	raddr = raddr & ~0xFFF;
+	uint32_t first_entry = (vaddr & (0x3FF<<22))>>22;
+	for(int i = 0; i < num_tables; i++){
+		uint32_t *table;
+	        for(int j = 0; j < 1024 && j < len; j++){
+			table[j] = ((raddr + 0x1000*j) | 0x111);
+		}
+		page_directory[first_entry+i] = (uint32_t)table;
+		len -= 0x400*0x1000;
+	}
 }
 
 // generates identity paging for the given list of addresses
-void idpage(uint32_t start_addr, uint32_t size, uint32_t **pg_tbl_ptr){
-	if(*pg_tbl_ptr == 0){
-		*pg_tbl_ptr = (uint32_t*)ksbrk(4096, 4096);
+void idpage(uint32_t addr, uint32_t size, uint32_t page_dir[]){
+	uint32_t first_entry = (addr & (0x3FF<<22))>>22;
+	if(page_dir[addr] == EMPTY_TABLE){
+		page_dir[addr] = (uint32_t)ksbrk(4096, 4096);
 	}
-	uint32_t *page_table = *pg_tbl_ptr;
+	size = size / 0x1000;
 	if(size > 1024) size = 1024;
-	start_addr = start_addr & (~0xFFF);
+	addr = addr & (~0xFFF);
+	uint32_t *page = (uint32_t*)page_dir[addr];
 	for(uint32_t i = 0; i < size; i++){
-		page_table[i] = (start_addr + i*0x1000) | 3;
+		page[i] = (addr + i*0x1000) | 3;
 	}
-	
+	page_dir[addr] = (uint32_t)page | 3;
+}
+
+uint32_t *v2raddr(uint32_t page_dir[], uint32_t vaddr) {
+	uint32_t *table = (uint32_t*)page_dir[(vaddr & (0x3FF<<22))>>22];
+	return  (uint32_t*)table[(vaddr & (0x3FF<<12))>>12];
 }
 
 void mem_init(){
 	
-	brk_ptr = get_init_brk();
-	print("brk pointer pointer initial:");
-	print_int((int) &brk_ptr);
-	print("brk pointer initial:");
+	brk_ptr = get_heap_space();
+	print("brk_ptr initial: ");
 	print_int((int) brk_ptr);
+	print_nl();
+	print("&brk_ptr initial: ");
+	print_int((int) &brk_ptr);
+	print_nl();
+	print("stack start: ");
+	print_int((int) get_stack_space());
+	print_nl();
+	print("stack current: ");
+	print_int((int) get_stack_ptr());
+	print_nl();
+	print("kernel start: ");
+	print_int((int) get_kernel_start());
 	print_nl();
 	for(int i = 0; i < 1024; i++)
 	{
                 // This sets the following flags to the pages:
-                //   Supervisor: Only kernel-mode can access them
-                //   Write Enabled: It can be both read from and written to
-                //   Not Present: The page table is not
-		page_directory[i] = 0x00000002;
+                // -Supervisor: Only kernel-mode can access them
+                // -Write Enabled: It can be both read from and written to
+                // -Not Present: The page table is not
+		page_directory[i] = EMPTY_TABLE;
 	}
 
 	uint32_t *first_page_table;
 	// Sets up identity page for 0x00000000-0x00000fff
-	idpage(0x00000000, 1024, &first_page_table);
+	idpage(0x00000000, 1024*0x1000, page_directory);	
 
-	
-       	page_directory[0] = ((uint32_t)first_page_table) | 3;
+	// Maps kernel to 0xC0000000
+	map_page_tables(page_directory, 0xC0000000, (uint32_t)get_kernel_start(), 0x400000);
+
 	load_page_directory((unsigned int*)page_directory);
 	enable_paging();
 
-	print("brk pointer after id paging:");
-	print_int((int) brk_ptr);
-	print_nl();	
+        print("brk");
+	print_int((uint32_t)brk_ptr);
+	print_nl();
+
+	uint32_t brkpp = (uint32_t)&brk_ptr;
+	print("brkpp");
+	print_int(brkpp);
+	print_nl();
+	
+	print("value at brkpp");
+	print_int(*((uint32_t *)brkpp));
+	print_nl();
+
+        print("mapped brkpp");
+	print_int((brkpp & 0x3FFFFF));
+	print_nl();
+	
+	print("pointer at map");
+	print_int((uint32_t)v2raddr(page_directory, (brkpp & 0x3FFFFF) + 0xC0000000));
+	print_nl();
+	
 }
 
 /*

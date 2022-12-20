@@ -11,12 +11,36 @@ void clear(void){
 		vidptr[j+1] = 0x07;
 		j = j + 2;
 	}
+	curr = 0;
+}
+
+
+void shiftup(int lines){
+	int offset = BYTES_PER_ELM * CLMN_IN_LN * lines;
+	unsigned int j = 0;
+	while(j < LINES*CLMN_IN_LN*BYTES_PER_ELM - offset){
+		vidptr[j] = vidptr[j+offset];
+		vidptr[j+1] = vidptr[j+1+offset];
+		j = j + 2;
+	}
+	while(j < LINES*CLMN_IN_LN*BYTES_PER_ELM){
+		vidptr[j] = ' ';
+		vidptr[j+1] = 0x0;
+		j = j + 2;
+	}
+	curr -= offset;
 }
 
 void kputc(char c){
+
+	if (curr + 2 > LINES*CLMN_IN_LN*BYTES_PER_ELM){
+			shiftup(1);
+	}
+
        	vidptr[curr++] = c;
        	vidptr[curr++] = 0x07;
 }
+
 
 void print(const char *str){
 	unsigned int j = 0;
@@ -24,6 +48,9 @@ void print(const char *str){
 		vidptr[curr] = str[j];
 		vidptr[curr+1] = 0x07;
 		curr=curr+2;
+		if (curr > LINES*CLMN_IN_LN*BYTES_PER_ELM){
+			shiftup(1);
+		}
 		++j;
 	}
 }
@@ -36,6 +63,9 @@ void print_int(int num){
 		count+=1;
 	} while(temp > 0);
 	curr += count*2;
+	if (curr > LINES*CLMN_IN_LN*BYTES_PER_ELM){
+		shiftup(1);
+	}
 	while(count > 0){
 		count--;
 		char dig = (num % 10)+'0';
@@ -48,6 +78,9 @@ void print_nl(void)
 {
 	static unsigned int line_size = BYTES_PER_ELM * CLMN_IN_LN;
 	curr = curr + (line_size - curr % (line_size));
+	if (curr > LINES*CLMN_IN_LN*BYTES_PER_ELM){
+		shiftup(1);
+	}
 }
 
 void backspace(void){

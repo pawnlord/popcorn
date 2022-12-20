@@ -23,10 +23,10 @@ typedef struct buddy{
 
 #define META_SZ sizeof(block_info_t)
 
+#define EMPTY_TABLE 0x00000002
+
 void mem_init(void);
 
 void *kmalloc(size_t size);
-
-unsigned char *read_brk(void);
 
 void kfree(void *ptr);
