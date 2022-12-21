@@ -13,5 +13,9 @@ void kasserteq(uint32_t val1, uint32_t val2){
   print_int(val1);
   print(" does not equal ");
   print_int(val2);
-  while(temp == press_flag){} // TODO: Move to IO
+  while(temp == press_flag){} // TODO: Move to IO, make it work
 }
+
+
+__asm__(".bss\n\t"
+	"eok:");

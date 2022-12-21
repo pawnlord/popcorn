@@ -1,9 +1,12 @@
+#ifndef STDLIB_H
+#define STDLIB_H
 /**
    Various functions for memory management
 */
 
 typedef int size_t;
 typedef unsigned long uint32_t;
+typedef unsigned char uint8_t;
 
 typedef struct block_info{
   size_t sz;
@@ -36,3 +39,4 @@ void kfree(void *ptr);
  */
 
 void kasserteq(uint32_t val1, uint32_t val2);
+#endif

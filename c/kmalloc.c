@@ -3,6 +3,7 @@
 */
 #include "display.h"
 #include "stdlib.h"
+#include "buddy.h"
 
 
 extern unsigned char *get_heap_space(void);
@@ -30,7 +31,7 @@ unsigned char *brk_ptr;
 buddy_t *head;
 
 // kernel sbrk
-// should only be run by functions in this file
+// should only be run by functions doing memory management (this and buddy.c)
 // should not be run directly.
 unsigned char *ksbrk(size_t sz, int align){
 	unsigned char *ptr = brk_ptr;
@@ -113,9 +114,9 @@ void mem_init(){
 	load_page_directory((unsigned int*)page_directory);
 	enable_paging();
 
-
+	init_buddy_alloc();
 	uint32_t brkpp = (uint32_t)&brk_ptr;
-	kasserteq(brkpp | 0b110, (uint32_t)v2raddr(page_directory, (brkpp & 0x3FFFFF) + 0xC0000000 - 0x100000));
+	kasserteq(brkpp | 0b111, (uint32_t)v2raddr(page_directory, (brkpp & 0x3FFFFF) + 0xC0000000 - 0x100000));
 }
 
 /*
