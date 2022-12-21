@@ -19,10 +19,10 @@
 
 void init_buddy_alloc();
 
-// returns new index on succes, 0 on failure
+// returns 1 on success, 0 on failure
 // size in pages, idx into page_table
 int request_page(size_t size, uint32_t page_table[], int idx);
 
 // frees one page when it is no longer being used
 // returns 1 on success, 0 on failure
-int free_page(uint32_t* page);
+int free_page(size_t size, uint32_t page_table[], int idx);

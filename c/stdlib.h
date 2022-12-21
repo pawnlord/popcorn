@@ -12,21 +12,12 @@ typedef struct block_info{
   size_t sz;
   struct block_info *next;
   char free;
-  
 } block_info_t;
-
-typedef struct buddy{
-  unsigned char size; // size of block (in bits)
-  char block1 : 1;
-  char block2 : 2;
-  struct buddy *parent;
-  struct buddy *children;
-} buddy_t; // Smallest block is 1 page, or 4096 bytes
-
 
 #define META_SZ sizeof(block_info_t)
 
 #define EMPTY_TABLE 0x00000002
+
 
 void mem_init(void);
 
