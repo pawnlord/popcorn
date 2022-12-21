@@ -39,4 +39,5 @@ void kfree(void *ptr);
  */
 
 void kasserteq(uint32_t val1, uint32_t val2);
+void kassertneq(uint32_t val1, uint32_t val2);
 #endif
