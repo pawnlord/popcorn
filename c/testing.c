@@ -2,14 +2,15 @@
 #include "stdlib.h"
 extern char press_flag;
 
-void kasserteq(uint32_t val1, uint32_t val2){
+void kasserteq(uint32_t val1, uint32_t val2, const char *msg){
   if(val1 == val2){
     return;
   }
   char temp = press_flag;
-  print("Error: asserteq failed");
-  print_nl();
-  print("        ");
+  println("Error: asserteq failed");
+  print("Message: ");
+  println(msg);
+  print("         ");
   print_int(val1);
   print(" does not equal ");
   print_int(val2);
@@ -18,14 +19,15 @@ void kasserteq(uint32_t val1, uint32_t val2){
 
 
 
-void kassertneq(uint32_t val1, uint32_t val2){
+void kassertneq(uint32_t val1, uint32_t val2, const char *msg){
   if(val1 != val2){
     return;
   }
   char temp = press_flag;
-  print("Error: assertneq failed");
-  print_nl();
-  print("        ");
+  println("Error: assertneq failed");
+  print("Message: ");
+  println(msg);
+  print("         ");
   print_int(val1);
   print(" equals ");
   print_int(val2);

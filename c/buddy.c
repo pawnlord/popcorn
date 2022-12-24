@@ -21,12 +21,12 @@ void init_buddy_alloc(){
 	}
     }
 		
-    kasserteq(buddies[0x0], 0xFF);
-    kasserteq(buddies[0x7F], 0xFF);
-    kasserteq(buddies[BUDDY_LEVEL(4) + 0x0], 0xFF);
-    kasserteq(buddies[BUDDY_LEVEL(4)+((0x80)/(1<<4)-1)], 0xFF);
-    kasserteq(buddies[BUDDY_LEVEL(7) + 0x0], 0xFF);
-    kasserteq(buddies[BUDDY_LEVEL(10) + 0x0], 0x01);
+    kasserteq(buddies[0x0], 0xFF, "init_buddy_alloc (level 0, byte 0x0)");
+    kasserteq(buddies[0x7F], 0xFF, "init_buddy_alloc (level 0, byte 0x7F)");
+    kasserteq(buddies[BUDDY_LEVEL(4) + 0x0], 0xFF, "init_buddy_alloc (level 4, byte 0x0)");
+    kasserteq(buddies[BUDDY_LEVEL(4)+((0x80)/(1<<4)-1)], 0xFF, "init_buddy_alloc (level 4, byte 0x7)");
+    kasserteq(buddies[BUDDY_LEVEL(7) + 0x0], 0xFF, "init_buddy_alloc (level 7, byte 0x0)");
+    kasserteq(buddies[BUDDY_LEVEL(10) + 0x0], 0x01, "init_buddy_alloc (level 10, byte 0x0)");
     
     test_req_page();
 }
@@ -164,14 +164,19 @@ int free_page(size_t size, uint32_t page_table[], int idx){
 
 void test_req_page(){
     uint32_t page_table_test[1024];
-    kassertneq(request_page(1024, page_table_test, 0), 0); // requesting one page_table
-    kasserteq(buddies[BUDDY_LEVEL(10)] & 0b10, 0b10);
+    kassertneq(request_page(1024, page_table_test, 0), 0, "request page failed");
+    kasserteq(buddies[BUDDY_LEVEL(10)] & 0b10, 0b10, "Buddy level 10 not set");
+    
     for(int i = 0; i < 1024; i++){
-	kassertneq(0, page_table_test[i]);
+	char num[4] = "\0\0\0\0";
+	itos(i, num, 4);
+	kassertneq(0, page_table_test[i], num);
     }
-    kassertneq(free_page(1024, page_table_test, 0), 0);
+    kassertneq(free_page(1024, page_table_test, 0), 0, "free page failed");
     for(int i = 0; i < 1024; i++){
-	kasserteq(0, page_table_test[i]);
+	char num[4] = "\0\0\0\0";
+	itos(i, num, 4);
+	kasserteq(0, page_table_test[i], num);
     }
-    kasserteq(buddies[BUDDY_LEVEL(10)] & 0b10, 0b0);
+    kasserteq(buddies[BUDDY_LEVEL(10)] & 0b10, 0b0, "Buddy level 10 not reset");
 }

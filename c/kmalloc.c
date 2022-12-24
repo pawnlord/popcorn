@@ -32,6 +32,11 @@ PageTable *get_next_page_table() {
 ProcessState kernel_state = {kernel_page_dir, 0x0, 0x0};
 
 ProcessState *process_state = &kernel_state;
+
+BlockInfo *block_start;
+BlockInfo *current_block; // last block initialized; assumed to be pointing to
+                          // valid memory
+                          
 //uint32_t first_page_table[1024] __attribute__((aligned(4096)));
 
 /*
@@ -149,6 +154,19 @@ void idpage(uint32_t addr, uint32_t size, uint32_t page_dir[]){
     page_dir[first_entry] = ((uint32_t)page_table) | 0b111;
 }
 
+void test_malloc() {
+    kasserteq(current_block->sz, 0, "starting block size != 0");
+    kasserteq(current_block->free, 1, "starting block is not free");
+    kasserteq(current_block->allocated, 0, "starting block is allocated");
+    kasserteq((uint32_t)current_block, (uint32_t)block_start, "current block != starting block");
+    void *tmp = kmalloc(25);
+    kassertneq((uint32_t)current_block, (uint32_t)block_start, "current block == starting block");
+    kasserteq((uint32_t)current_block, (uint32_t)block_start->next, "current block != block after start");
+    kasserteq(block_start->free, 0, "starting block is free");
+    kasserteq(block_start->allocated, 1, "starting block not allocated");
+    kasserteq(block_start->sz, 25, "block size !=  25");
+    kasserteq(block_start->sz + sizeof *block_start, ((uint32_t)current_block)-((uint32_t)block_start), "distance between blocks unexpected");
+}
 
 void mem_init(){
 	
@@ -164,17 +182,28 @@ void mem_init(){
 
     // Sets up identity page for 0x00000000-0x00000fff
     idpage(0x0, 1024*0x1000, kernel_page_dir);	
-    kasserteq(((uint32_t*)(kernel_page_dir[0] & ~0b111))[0], 0x0 | 0b11);
+    kasserteq(((uint32_t*)(kernel_page_dir[0] & ~0b111))[0], 0x0 | 0b11, "kernel page 0 not identity paged");
     idpage(1024*0x1000, 1024*0x1000, kernel_page_dir);	
-    //kasserteq(((uint32_t*)(kernel_page_dir[1] & ~0b111))[0], 1024*0x1000 | 0b111);
+    kasserteq(((uint32_t*)(kernel_page_dir[1] & ~0b111))[0], 1024*0x1000 | 0b11, "kernel page 1 not identity paged");
     idpage(1024*0x1000*2, 1024*0x1000, kernel_page_dir);	
 
     // Maps kernel to 0xC0000000
     map_page_tables(kernel_page_dir, 0xC0000000, (uint32_t)get_kernel_start(), 0x400000);
-    kasserteq(((uint32_t*)kernel_page_dir[768])[0], (uint32_t)get_kernel_start() | 0b111);
+    kasserteq(((uint32_t*)kernel_page_dir[768])[0], (uint32_t)get_kernel_start() | 0b111, "kernel page map failed");
 
+    init_buddy_alloc();
+    
     load_page_directory((unsigned int*)kernel_page_dir);
     enable_paging();
+
+    block_start = (BlockInfo*)sbrk(sizeof *block_start);
+    current_block = block_start;
+    current_block->sz = 0;
+    current_block->next = (BlockInfo*)sbrk(0);
+    current_block->free = 1;
+    current_block->allocated = 0;
+    test_malloc();
+    
 }
 
 /*
@@ -182,7 +211,29 @@ void mem_init(){
   specifically designed with the kernel in mind
 */
 void *kmalloc(size_t size){
-    
+    void *ptr;
+    if(current_block->free == 1 && current_block->allocated == 0){
+	if(current_block->next != (BlockInfo*)sbrk(0)){
+	    current_block->next = (BlockInfo*)sbrk(sizeof *block_start); // sbrk has been moved, but we didn't know about it
+	    current_block = current_block->next;
+	    current_block->sz = 0;
+	    current_block->next = (BlockInfo*)sbrk(0);
+	    current_block->free = 1;
+	    current_block->allocated = 0;
+	}
+
+	current_block->sz = size;
+	ptr = (void*)sbrk(size);
+	current_block->next = (BlockInfo*)sbrk(sizeof *block_start);
+	current_block->free = 0;
+	current_block->allocated = 1;
+	current_block = current_block->next;
+	current_block->sz = 0;
+	current_block->next = (BlockInfo*)sbrk(0);
+	current_block->free = 1;
+	current_block->allocated = 0;    
+    }
+    return ptr;
 }
 
 void kfree(void *ptr);

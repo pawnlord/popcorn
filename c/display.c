@@ -54,6 +54,10 @@ void print(const char *str){
 	++j;
     }
 }
+void println(const char *str){
+    print(str);
+    print_nl();
+}
 void print_int(int num){
     int count = 0;
     int temp = num;
@@ -74,6 +78,11 @@ void print_int(int num){
 	num = num / 10;
     }
 }
+
+void println_int(int num){
+    print_int(num);
+    print_nl();
+}
 void print_nl(void)
 {
     static unsigned int line_size = BYTES_PER_ELM * CLMN_IN_LN;
@@ -83,6 +92,25 @@ void print_nl(void)
     }
 }
 
+void itos(int num, char *str, int size){
+    int count = 0;
+    int temp = num;
+    do{
+	temp = temp / 10;
+	count+=1;
+    } while(temp > 0);
+    if(count >= size)
+	count = size-1;
+    else
+	str[count+1] = '\0';
+    while(count > 0){
+	count--;
+	char dig = (num % 10)+'0';
+	str[count] = dig;
+	num = num / 10;
+    }
+    
+}
 void backspace(void){
     curr = curr - 2;
     vidptr[curr] = '\0';

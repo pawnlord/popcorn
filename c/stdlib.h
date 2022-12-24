@@ -10,8 +10,9 @@ typedef unsigned char uint8_t;
 
 typedef struct BlockInfo{
     size_t sz;
-    struct block_info *next;
+    struct BlockInfo *next;
     char free;
+    char allocated;
 } BlockInfo;
 
 typedef struct ProcessState{
@@ -38,6 +39,6 @@ void kfree(void *ptr);
   kernel level testing
  */
 
-void kasserteq(uint32_t val1, uint32_t val2);
-void kassertneq(uint32_t val1, uint32_t val2);
+void kasserteq(uint32_t val1, uint32_t val2, const char *msg);
+void kassertneq(uint32_t val1, uint32_t val2, const char *msg);
 #endif
