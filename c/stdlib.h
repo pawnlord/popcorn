@@ -8,16 +8,24 @@ typedef int size_t;
 typedef unsigned long uint32_t;
 typedef unsigned char uint8_t;
 
-typedef struct block_info{
-  size_t sz;
-  struct block_info *next;
-  char free;
-} block_info_t;
+typedef struct BlockInfo{
+    size_t sz;
+    struct block_info *next;
+    char free;
+} BlockInfo;
+
+typedef struct ProcessState{
+    uint32_t *page_dir;
+    unsigned char *brk_ptr;
+} ProcessState;
 
 #define META_SZ sizeof(block_info_t)
 
 #define EMPTY_TABLE 0x00000002
 
+unsigned char *sbrk(size_t sz, int align);
+
+unsigned char *align_sbrk(size_t sz, int align);
 
 void mem_init(void);
 
