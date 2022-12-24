@@ -20,9 +20,6 @@ void init_buddy_alloc(){
 	    }
 	}
     }
-    print("Buddy level 0: ");
-    print_int(BUDDY_LEVEL(0));
-    print_nl();
 		
     kasserteq(buddies[0x0], 0xFF);
     kasserteq(buddies[0x7F], 0xFF);

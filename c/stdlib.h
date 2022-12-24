@@ -17,13 +17,14 @@ typedef struct BlockInfo{
 typedef struct ProcessState{
     uint32_t *page_dir;
     unsigned char *brk_ptr;
+    uint32_t allocated;
 } ProcessState;
 
 #define META_SZ sizeof(block_info_t)
 
 #define EMPTY_TABLE 0x00000002
 
-unsigned char *sbrk(size_t sz, int align);
+unsigned char *sbrk(size_t sz);
 
 unsigned char *align_sbrk(size_t sz, int align);
 
