@@ -32,9 +32,9 @@ unsigned char *align_sbrk(size_t sz, int align);
 
 void mem_init(void);
 
-void *kmalloc(size_t size);
+void *malloc(size_t size);
 
-void kfree(void *ptr);
+void free(void *ptr);
 
 /*
   kernel level testing

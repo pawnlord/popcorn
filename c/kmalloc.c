@@ -158,27 +158,30 @@ void idpage(uint32_t addr, uint32_t size, uint32_t page_dir[]){
 }
 
 void test_malloc() {
-    kasserteq(current_block->sz, 0, "starting block size != 0");
-    kasserteq(current_block->free, 1, "starting block is not free");
-    kasserteq(current_block->allocated, 0, "starting block is allocated");
-    kasserteq((uint32_t)current_block, (uint32_t)block_start, "current block != starting block");
-    void *tmp = kmalloc(25);
-    kassertneq((uint32_t)current_block, (uint32_t)block_start, "current block == starting block");
-    kasserteq((uint32_t)current_block, (uint32_t)block_start->next, "current block != block after start");
-    kasserteq(block_start->free, 0, "starting block is free");
-    kasserteq(block_start->allocated, 1, "starting block not allocated");
-    kasserteq(block_start->sz, 25, "block size !=  25");
-    kasserteq(block_start->sz + sizeof *block_start, ((uint32_t)current_block)-((uint32_t)block_start), "distance between blocks unexpected");
-    void *tmp2 = kmalloc(25);
-    kfree(tmp);
-    kasserteq(current_block->free, 1, "freed block is not free");
-    kasserteq(current_block->allocated, 1, "freed block is not allocated");
-    kasserteq(current_block->sz, 25, "freed block is not the correct size");
-    kasserteq(current_block->sz, ((uint32_t)tmp2) - ((uint32_t)tmp) - sizeof *current_block, "current block not in the correct location");
-    kasserteq((uint32_t)current_block->next, ((uint32_t)tmp2) - sizeof *current_block, "freed block does not point to last block");
-    kasserteq(((uint32_t)tmp)-sizeof *current_block, (uint32_t)current_block, "current block not in the correct location");
-    void *tmp3 = kmalloc(25);
-    kasserteq((uint32_t)tmp, (uint32_t)tmp3, "reallocation not working");
+    kasserteq(current_block->sz, 0, "test_malloc: starting block size != 0");
+    kasserteq(current_block->free, 1, "test_malloc: starting block is not free");
+    kasserteq(current_block->allocated, 0, "test_malloc: starting block is allocated");
+    kasserteq((uint32_t)current_block, (uint32_t)block_start, "test_malloc: current block != starting block");
+    void *tmp = malloc(25);
+    kassertneq((uint32_t)current_block, (uint32_t)block_start, "test_malloc: current block == starting block");
+    kasserteq((uint32_t)current_block, (uint32_t)block_start->next, "test_malloc: current block != block after start");
+    kasserteq(block_start->free, 0, "test_malloc: starting block is free");
+    kasserteq(block_start->allocated, 1, "test_malloc: starting block not allocated");
+    kasserteq(block_start->sz, 25, "test_malloc: block size !=  25");
+    kasserteq(block_start->sz + sizeof *block_start, ((uint32_t)current_block)-((uint32_t)block_start), "test_malloc: distance between blocks unexpected");
+    void *tmp2 = malloc(25);
+    free(tmp);
+    kasserteq(current_block->free, 1, "test_malloc: freed block is not free");
+    kasserteq(current_block->allocated, 1, "test_malloc: freed block is not allocated");
+    kasserteq(current_block->sz, 25, "test_malloc: freed block is not the correct size");
+    kasserteq(current_block->sz, ((uint32_t)tmp2) - ((uint32_t)tmp) - sizeof *current_block, "test_malloc: current block not in the correct location");
+    kasserteq((uint32_t)current_block->next, ((uint32_t)tmp2) - sizeof *current_block, "test_malloc: freed block does not point to last block");
+    kasserteq(((uint32_t)tmp)-sizeof *current_block, (uint32_t)current_block, "test_malloc: current block not in the correct location");
+    void *tmp3 = malloc(25);
+    kasserteq((uint32_t)tmp, (uint32_t)tmp3, "test_malloc: reallocation not working");
+    free(tmp2);
+    free(tmp3);
+    kasserteq((uint32_t)current_block, (uint32_t)block_start, "test_malloc not reset correctly");
 }
 
 void mem_init(){
@@ -221,9 +224,8 @@ void mem_init(){
 
 /*
   general memory allocation
-  specifically designed with the kernel in mind
 */
-void *kmalloc(size_t size){
+void *malloc(size_t size){
     void *ptr;
     while(!current_block->free && current_block->next){
 	current_block = current_block->next;
@@ -269,7 +271,7 @@ void *kmalloc(size_t size){
     return ptr;
 }
 
-void kfree(void *ptr) {
+void free(void *ptr) {
     BlockInfo *block = (BlockInfo*)(((uint32_t)ptr) - ((uint32_t)sizeof(BlockInfo)));
     if(!block->free && block->allocated){
 	block->free = 1;
