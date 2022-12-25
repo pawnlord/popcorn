@@ -158,13 +158,13 @@ void idpage(uint32_t addr, uint32_t size, uint32_t page_dir[]){
 }
 
 void test_malloc() {
-    kasserteq(current_block->sz, 0, "test_malloc: starting block size != 0");
-    kasserteq(current_block->free, 1, "test_malloc: starting block is not free");
-    kasserteq(current_block->allocated, 0, "test_malloc: starting block is allocated");
-    kasserteq((uint32_t)current_block, (uint32_t)block_start, "test_malloc: current block != starting block");
+    kasserteq(current_block->sz, 0, "test_malloc: start block size != 0");
+    kasserteq(current_block->free, 1, "test_malloc: start block is not free");
+    kasserteq(current_block->allocated, 0, "test_malloc: start block is allocated");
+    kasserteq((uint32_t)current_block, (uint32_t)block_start, "test_malloc: current block != start block");
     void *tmp = malloc(25);
-    kassertneq((uint32_t)current_block, (uint32_t)block_start, "test_malloc: current block == starting block");
-    kasserteq((uint32_t)current_block, (uint32_t)block_start->next, "test_malloc: current block != block after start");
+    kassertneq((uint32_t)current_block, (uint32_t)block_start, "test_malloc: current block == start block");
+    kasserteq((uint32_t)current_block, (uint32_t)block_start->next, "test_malloc: current block != start block");
     kasserteq(block_start->free, 0, "test_malloc: starting block is free");
     kasserteq(block_start->allocated, 1, "test_malloc: starting block not allocated");
     kasserteq(block_start->sz, 25, "test_malloc: block size !=  25");
@@ -181,7 +181,7 @@ void test_malloc() {
     kasserteq((uint32_t)tmp, (uint32_t)tmp3, "test_malloc: reallocation not working");
     free(tmp2);
     free(tmp3);
-    kasserteq((uint32_t)current_block, (uint32_t)block_start, "test_malloc not reset correctly");
+    kasserteq((uint32_t)current_block, (uint32_t)block_start, "test_malloc(clean): current block != start block");
 }
 
 void mem_init(){
@@ -226,58 +226,67 @@ void mem_init(){
   general memory allocation
 */
 void *malloc(size_t size){
-    void *ptr;
+    void *ptr = 0;
     while(!current_block->free && current_block->next){
 	current_block = current_block->next;
     }
-    if(!current_block->allocated){
-	if(current_block->next != (BlockInfo*)sbrk(0)){
-	    current_block->next = (BlockInfo*)sbrk(sizeof *block_start); // sbrk has been moved, but we didn't know about it
+    while(ptr == 0){
+	if(!current_block->allocated){
+	    if(current_block->next != (BlockInfo*)sbrk(0)){
+		current_block->next = (BlockInfo*)sbrk(sizeof *block_start); // sbrk has been moved, but we didn't know about it
+		current_block = current_block->next;
+		current_block->sz = 0;
+		current_block->next = (BlockInfo*)sbrk(0);
+		current_block->free = 1;
+		current_block->allocated = 0;
+	    }
+
+	    current_block->sz = size;
+	    ptr = (void*)sbrk(size);
+	    current_block->next = (BlockInfo*)sbrk(sizeof *block_start);
+	    current_block->free = 0;
+	    current_block->allocated = 1;
 	    current_block = current_block->next;
 	    current_block->sz = 0;
 	    current_block->next = (BlockInfo*)sbrk(0);
 	    current_block->free = 1;
 	    current_block->allocated = 0;
+	    break;
+	} else { // we have allocated this block
+	    if(size <= current_block->sz - sizeof *current_block){
+		current_block->sz = size;
+		BlockInfo *next = (BlockInfo*)(((uint32_t)current_block) + current_block->sz + sizeof *current_block);
+		next->next = current_block->next;
+		next->sz = current_block->sz - size - sizeof *next;
+		next->free = 1;
+		next->allocated = 1;
+		ptr = (BlockInfo*)(((uint32_t)current_block) + sizeof *current_block);
+		current_block->next = next;
+		current_block->free = 0;
+		current_block->allocated = 1;
+		current_block = current_block->next;
+		break;
+	    } else if (size <= current_block->sz){
+		current_block->sz = size;
+		current_block->free = 0;
+		ptr = (BlockInfo*)(((uint32_t)current_block) + sizeof *current_block);
+		current_block = current_block->next;
+		break;
+	    }
 	}
-
-	current_block->sz = size;
-	ptr = (void*)sbrk(size);
-	current_block->next = (BlockInfo*)sbrk(sizeof *block_start);
-	current_block->free = 0;
-	current_block->allocated = 1;
 	current_block = current_block->next;
-	current_block->sz = 0;
-	current_block->next = (BlockInfo*)sbrk(0);
-	current_block->free = 1;
-	current_block->allocated = 0;    
-    } else { // we have allocated this block
-	if(size <= current_block->sz - sizeof *current_block){
-	    current_block->sz = size;
-	    BlockInfo *next = (BlockInfo*)(((uint32_t)current_block) + current_block->sz + sizeof *current_block);
-	    next->next = current_block->next;
-	    next->sz = current_block->sz - size - sizeof *next;
-	    next->free = 1;
-	    next->allocated = 1;
-	    ptr = (BlockInfo*)(((uint32_t)current_block) + sizeof *current_block);
-            current_block->next = next;
-	    current_block->free = 0;
-	    current_block = current_block->next;
-	} else if (size <= current_block->sz){
-	    current_block->sz = size;
-	    ptr = (BlockInfo*)(((uint32_t)current_block) + sizeof *current_block);
-            current_block = current_block->next;
-	}
     }
     return ptr;
 }
 
 void free(void *ptr) {
     BlockInfo *block = (BlockInfo*)(((uint32_t)ptr) - ((uint32_t)sizeof(BlockInfo)));
-    if(!block->free && block->allocated){
-	block->free = 1;
-    
-	if(block < current_block){ // TODO: make sure this block is in the chain
-	    current_block = block;
-	}
+
+    kasserteq(block->free, 0, "Attempted to free block that's already free");
+    kassertneq(block->allocated, 0, "Attempted to free unallocated block");
+
+    block->free = 1;    
+    if(block <= current_block){ // TODO: make sure this block is in the chain
+	current_block = block;
     }
 }
