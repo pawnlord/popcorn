@@ -15,6 +15,9 @@ extern void enable_paging();
 
 typedef uint32_t PageTable[1024];
 
+
+
+
 // Paging definitions
 
 uint32_t kernel_page_dir[1024] __attribute__((aligned(4096)));
@@ -166,6 +169,16 @@ void test_malloc() {
     kasserteq(block_start->allocated, 1, "starting block not allocated");
     kasserteq(block_start->sz, 25, "block size !=  25");
     kasserteq(block_start->sz + sizeof *block_start, ((uint32_t)current_block)-((uint32_t)block_start), "distance between blocks unexpected");
+    void *tmp2 = kmalloc(25);
+    kfree(tmp);
+    kasserteq(current_block->free, 1, "freed block is not free");
+    kasserteq(current_block->allocated, 1, "freed block is not allocated");
+    kasserteq(current_block->sz, 25, "freed block is not the correct size");
+    kasserteq(current_block->sz, ((uint32_t)tmp2) - ((uint32_t)tmp) - sizeof *current_block, "current block not in the correct location");
+    kasserteq((uint32_t)current_block->next, ((uint32_t)tmp2) - sizeof *current_block, "freed block does not point to last block");
+    kasserteq(((uint32_t)tmp)-sizeof *current_block, (uint32_t)current_block, "current block not in the correct location");
+    void *tmp3 = kmalloc(25);
+    kasserteq((uint32_t)tmp, (uint32_t)tmp3, "reallocation not working");
 }
 
 void mem_init(){
@@ -212,7 +225,10 @@ void mem_init(){
 */
 void *kmalloc(size_t size){
     void *ptr;
-    if(current_block->free == 1 && current_block->allocated == 0){
+    while(!current_block->free && current_block->next){
+	current_block = current_block->next;
+    }
+    if(!current_block->allocated){
 	if(current_block->next != (BlockInfo*)sbrk(0)){
 	    current_block->next = (BlockInfo*)sbrk(sizeof *block_start); // sbrk has been moved, but we didn't know about it
 	    current_block = current_block->next;
@@ -232,8 +248,34 @@ void *kmalloc(size_t size){
 	current_block->next = (BlockInfo*)sbrk(0);
 	current_block->free = 1;
 	current_block->allocated = 0;    
+    } else { // we have allocated this block
+	if(size <= current_block->sz - sizeof *current_block){
+	    current_block->sz = size;
+	    BlockInfo *next = (BlockInfo*)(((uint32_t)current_block) + current_block->sz + sizeof *current_block);
+	    next->next = current_block->next;
+	    next->sz = current_block->sz - size - sizeof *next;
+	    next->free = 1;
+	    next->allocated = 1;
+	    ptr = (BlockInfo*)(((uint32_t)current_block) + sizeof *current_block);
+            current_block->next = next;
+	    current_block->free = 0;
+	    current_block = current_block->next;
+	} else if (size <= current_block->sz){
+	    current_block->sz = size;
+	    ptr = (BlockInfo*)(((uint32_t)current_block) + sizeof *current_block);
+            current_block = current_block->next;
+	}
     }
     return ptr;
 }
 
-void kfree(void *ptr);
+void kfree(void *ptr) {
+    BlockInfo *block = (BlockInfo*)(((uint32_t)ptr) - ((uint32_t)sizeof(BlockInfo)));
+    if(!block->free && block->allocated){
+	block->free = 1;
+    
+	if(block < current_block){ // TODO: make sure this block is in the chain
+	    current_block = block;
+	}
+    }
+}
