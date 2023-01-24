@@ -21,98 +21,103 @@ char press_flag = 0; // alternates between 0 and 1 as keyboard is pressed
 
 /* IDT/interrupt functions */
 struct IDT_entry{
-	unsigned short int offset_low;
-	unsigned short int selector;
-	unsigned char zero;
-	unsigned char type_attr;
-	unsigned short int offset_high;
+    unsigned short int offset_low;
+    unsigned short int selector;
+    unsigned char zero;
+    unsigned char type_attr;
+    unsigned short int offset_high;
 };
 struct IDT_entry IDT[IDT_SIZE];
 
 void idt_init(void){
-	unsigned long keyboard_addr;
-	unsigned long idt_addr;
-	unsigned long idt_ptr[2];
+    unsigned long keyboard_addr;
+    unsigned long idt_addr;
+    unsigned long idt_ptr[2];
 
-	keyboard_addr = (unsigned long)keyboard_handler;
-	IDT[0x21].offset_low = keyboard_addr & 0xFFFF;
-	IDT[0x21].selector = 0x08;
-	IDT[0x21].zero = 0;
-	IDT[0x21].type_attr = 0x8e;
-	IDT[0x21].offset_high = (keyboard_addr & 0xFFFF0000) >> 16;
+    keyboard_addr = (unsigned long)keyboard_handler;
+    IDT[0x21].offset_low = keyboard_addr & 0xFFFF;
+    IDT[0x21].selector = 0x08;
+    IDT[0x21].zero = 0;
+    IDT[0x21].type_attr = 0x8e;
+    IDT[0x21].offset_high = (keyboard_addr & 0xFFFF0000) >> 16;
 
-	/*     Ports
-	*	 PIC1	PIC2
-	*Command 0x20	0xA0
-	*Data	 0x21	0xA1 */
+    /*     Ports
+     *	 PIC1	PIC2
+     *Command 0x20	0xA0
+     *Data	 0x21	0xA1 */
 	
-	write_port(0x20, 0x11);
-	write_port(0xA0, 0x11);
-
-	
-	write_port (0x21, 0x20);
-	write_port (0xA1, 0x28);
+    write_port(0x20, 0x11);
+    write_port(0xA0, 0x11);
 
 	
-	write_port (0x21, 0x00);
-	write_port (0xA1, 0x00);
-	
-	write_port (0x21, 0x01);
-	write_port (0xA1, 0x01);
+    write_port (0x21, 0x20);
+    write_port (0xA1, 0x28);
 
 	
-	write_port (0x21, 0xFF);
-	write_port (0xA1, 0xFF);
+    write_port (0x21, 0x00);
+    write_port (0xA1, 0x00);
+	
+    write_port (0x21, 0x01);
+    write_port (0xA1, 0x01);
 
-	idt_addr = (unsigned long) IDT;
-	idt_ptr[0] = (sizeof(struct IDT_entry) * IDT_SIZE) + ((idt_addr & 0xFFFF) << 16);
-	idt_ptr[1] = idt_addr >> 16;
+	
+    write_port (0x21, 0xFF);
+    write_port (0xA1, 0xFF); // Turn PIC off
 
-	load_idt(idt_ptr);
+    idt_addr = (unsigned long) IDT;
+    idt_ptr[0] = (sizeof(struct IDT_entry) * IDT_SIZE) + ((idt_addr & 0xFFFF) << 16);
+    idt_ptr[1] = idt_addr >> 16;
+
+    load_idt(idt_ptr);
 }
 
 
 /* keyboard functions */
 void kb_init(void){
-	write_port(0x21, 0xFD);
+    unsigned char val = (unsigned char)read_port(0x21);
+    val &= ~2;
+    write_port(0x21, val);
+}
+
+void error_handler_main(void){
+    write_port(0x20, 0x20);
 }
 
 void keyboard_handler_main(void){
-	unsigned char status;
-	char keycode;
-	write_port(0x20, 0x20);
+    unsigned char status;
+    char keycode;
+    write_port(0x20, 0x20);
 
-	status = read_port(KBRD_STAT);
+    status = read_port(KBRD_STAT);
 
-	if(status & 0x01){
-		keycode = read_port(KBRD_DATA);
-		if(keycode < 0)
-			return;
-		press_flag = !press_flag;
-		if(keycode == ENTER_KEY){
-			print_nl();
-			return;
-		}
-		if(keycode == BACKSPACE){
-			backspace();
-			return;
-		}
-		kputc(keyboard_map[(unsigned char) keycode]);
+    if(status & 0x01){
+	keycode = read_port(KBRD_DATA);
+	if(keycode < 0)
+	    return;
+	press_flag = !press_flag;
+	if(keycode == ENTER_KEY){
+	    print_nl();
+	    return;
 	}
+	if(keycode == BACKSPACE){
+	    backspace();
+	    return;
+	}
+	kputc(keyboard_map[(unsigned char) keycode]);
+    }
 }
 
 
 
-void kmain(void)
-{
-        const char *str = "popcorn colonel V1.0.0\0";
-        clear();
-	mem_init();
-	print(str);
-	print_nl();
+void kmain(void) {
+    const char *str = "popcorn colonel V1.0.0\0";
+    clear();
+    mem_init();
+    print(str);
+    print_nl();
 	
-	idt_init();
-	kb_init();
-	while(1);
-	return;
+    idt_init();
+    kb_init();
+    while(1);
+    return;
 }
