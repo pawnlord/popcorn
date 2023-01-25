@@ -5,6 +5,7 @@
 #include "stdlib.h"
 #include "kio.h"
 #include "display.h"
+#include "keyboard_map.h"
 
 extern void keyboard_handler(void);
 extern void error_handler(void);
@@ -13,6 +14,7 @@ extern void write_port(unsigned short port, unsigned short data);
 extern void load_idt(unsigned long *idt_ptr);
 extern unsigned char *get_heap_space(void);
 extern unsigned char *get_stack_space(void);
+extern IOStream *stdin;
 
 
 /* IDT/interrupt functions */
@@ -68,7 +70,20 @@ void idt_init(void){
     load_idt(idt_ptr);
 }
 
-
+void handle_io(){
+    char keycode = readch(stdin);
+    if(keycode <= 0)
+	return;
+    if(keycode == ENTER_KEY){
+	print_nl();
+	return;
+    }
+    if(keycode == BACKSPACE){
+	backspace();
+	return;
+    }
+    kputc(keyboard_map[(unsigned char) keycode]);
+}
 
 
 void kmain(void) {
@@ -83,6 +98,8 @@ void kmain(void) {
     // End init
 
     
-    while(1);
+    while(1){
+	handle_io();
+    }
     return;
 }
