@@ -6,8 +6,21 @@
 
 #include "display.h"
 
+typedef struct IOStream{
+  int sz;
+  int idx_start;
+  int idx_end;
+  char buf[];
+} IOStream;
 
 /* keyboard functions */
 void kb_init(void);
 
 void keyboard_handler_main(void);
+
+IOStream *init_io_stream(int sz);
+
+char readch(IOStream *stream);
+
+void writech(IOStream *stream, char ch);
+
