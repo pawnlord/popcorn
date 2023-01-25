@@ -1,23 +1,19 @@
 
-#define ENTER_KEY 0x1C
-#define BACKSPACE 0x0E
 
-#define KBRD_DATA 0x60
-#define KBRD_STAT 0x64
 #define IDT_SIZE 256
 
-#include "keyboard_map.h"
 #include "stdlib.h"
+#include "kio.h"
 #include "display.h"
 
 extern void keyboard_handler(void);
+extern void error_handler(void);
 extern char read_port(unsigned short port);
 extern void write_port(unsigned short port, unsigned short data);
 extern void load_idt(unsigned long *idt_ptr);
 extern unsigned char *get_heap_space(void);
 extern unsigned char *get_stack_space(void);
 
-char press_flag = 0; // alternates between 0 and 1 as keyboard is pressed
 
 /* IDT/interrupt functions */
 struct IDT_entry{
@@ -41,9 +37,10 @@ void idt_init(void){
     IDT[0x21].type_attr = 0x8e;
     IDT[0x21].offset_high = (keyboard_addr & 0xFFFF0000) >> 16;
 
+
     /*     Ports
-     *	 PIC1	PIC2
-     *Command 0x20	0xA0
+     *	         PIC1	PIC2
+     *Command    0x20	0xA0
      *Data	 0x21	0xA1 */
 	
     write_port(0x20, 0x11);
@@ -72,41 +69,6 @@ void idt_init(void){
 }
 
 
-/* keyboard functions */
-void kb_init(void){
-    unsigned char val = (unsigned char)read_port(0x21);
-    val &= ~2;
-    write_port(0x21, val);
-}
-
-void error_handler_main(void){
-    write_port(0x20, 0x20);
-}
-
-void keyboard_handler_main(void){
-    unsigned char status;
-    char keycode;
-    write_port(0x20, 0x20);
-
-    status = read_port(KBRD_STAT);
-
-    if(status & 0x01){
-	keycode = read_port(KBRD_DATA);
-	if(keycode < 0)
-	    return;
-	press_flag = !press_flag;
-	if(keycode == ENTER_KEY){
-	    print_nl();
-	    return;
-	}
-	if(keycode == BACKSPACE){
-	    backspace();
-	    return;
-	}
-	kputc(keyboard_map[(unsigned char) keycode]);
-    }
-}
-
 
 
 void kmain(void) {
@@ -115,9 +77,12 @@ void kmain(void) {
     mem_init();
     print(str);
     print_nl();
-	
+
     idt_init();
     kb_init();
+    // End init
+
+    
     while(1);
     return;
 }

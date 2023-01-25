@@ -58,3 +58,9 @@ because if we point to block_n-1, then we would need to assume that we have at l
 
 
 ```
+
+
+## current needs
+ - process management
+	 Stores page directory, automatically maps kernel and identity map
+		Means we need a way to remember already made page tables
