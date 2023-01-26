@@ -30,7 +30,7 @@ void test_io_stream(void){
 
 /* keyboard functions */
 void kb_init(void){
-    stdin = init_io_stream(10);
+    stdin = init_io_stream(1000);
     test_io_stream();
     unsigned char val = (unsigned char)read_port(0x21);
     val &= ~2;
@@ -55,7 +55,7 @@ void keyboard_handler_main(void){
 
 IOStream *init_io_stream(int sz){
     kasserteq(sz > 1, 1, "invalid size for stream");
-    IOStream *stream = malloc(sizeof stream  + sz);
+    IOStream *stream = malloc(sizeof(IOStream)  + sz);
     stream->sz = sz;
     stream->idx_start = 0;
     stream->idx_end = 0;
@@ -74,11 +74,12 @@ char readch(IOStream *stream){
 }
 
 void writech(IOStream *stream, char ch){
+
     stream->idx_end += 1;
-    stream->idx_end %= stream->sz;
+    stream->idx_end %= stream->sz; 
+    stream->buf[stream->idx_end] = ch;
     if(stream->idx_end == stream->idx_start){
 	stream->idx_start += 1;
 	stream->idx_start %= stream->sz;
     }
-    stream->buf[stream->idx_end] = ch;
 }

@@ -8,8 +8,8 @@
 
 typedef struct IOStream{
   int sz;
-  int idx_start;
-  int idx_end;
+  volatile int idx_start;
+  volatile int idx_end;
   char buf[];
 } IOStream;
 

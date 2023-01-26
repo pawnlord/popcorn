@@ -15,7 +15,8 @@ extern void load_idt(unsigned long *idt_ptr);
 extern unsigned char *get_heap_space(void);
 extern unsigned char *get_stack_space(void);
 extern IOStream *stdin;
-
+extern char press_flag;
+char local_press_flag;
 
 /* IDT/interrupt functions */
 struct IDT_entry{
@@ -72,6 +73,9 @@ void idt_init(void){
 
 void handle_io(){
     char keycode = readch(stdin);
+
+    if(keycode == 0)
+	return;
     if(keycode <= 0)
 	return;
     if(keycode == ENTER_KEY){
@@ -95,11 +99,15 @@ void kmain(void) {
 
     idt_init();
     kb_init();
+    local_press_flag = press_flag;
     // End init
 
-    
+
     while(1){
-	handle_io();
+	if(press_flag != local_press_flag){
+	    handle_io();
+	    local_press_flag = press_flag;
+	}
     }
     return;
 }
