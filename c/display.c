@@ -5,6 +5,8 @@
 unsigned int curr = 0;
 char *vidptr = (char*)0xb8000;
 extern IOStream *stdout;
+extern void display_int(void);
+extern void write_port(unsigned short port, unsigned short data);
 
 /* display functions */
 void clear(void){
@@ -36,6 +38,7 @@ void shiftup(int lines){
 
 void kputc(char c){
     writech(stdout, c);
+    display_int();
 }
 
 
@@ -103,6 +106,8 @@ void backspace(void){
 }
 void handle_stdout(void){
     char c;
+    write_port(0x20, 0x20);
+
     static unsigned int line_size = BYTES_PER_ELM * CLMN_IN_LN;
     while((c = readch(stdout))){
 	if(c == '\n'){

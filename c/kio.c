@@ -6,7 +6,7 @@ extern char read_port(unsigned short port);
 extern void write_port(unsigned short port, unsigned short data);
 
 char press_flag = 0; // alternates between 0 and 1 as keyboard is pressed
-
+char echo_flag = 1;
 IOStream *stdin;
 IOStream *stdout;
 
@@ -83,5 +83,35 @@ void writech(IOStream *stream, char ch){
     if(stream->idx_end == stream->idx_start){
 	stream->idx_start += 1;
 	stream->idx_start %= stream->sz;
+    }
+}
+
+void get_line(char *buf, int sz){
+    int count = 0;
+    char c;
+    while((c = readch(stdin)) != '\n' && count < sz-1){
+	if(c == 0)
+	    continue;
+	
+	if(c == '\b'){
+	    backspace();
+	    if(count > 0){
+		buf[count-1] = 0;
+		count--;
+	    }
+	    continue;
+	}
+	if(echo_flag){
+	    writech(stdout, c);
+	    handle_stdout();
+    	}
+
+	buf[count++] = c;
+	buf[count] = 0;
+    }
+    buf[count] = 0;
+    if(echo_flag){
+	writech(stdout, c);
+	handle_stdout();
     }
 }

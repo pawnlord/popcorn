@@ -5,5 +5,7 @@ gcc -fno-stack-protector -m32 -c c/display.c -o bin/display.o
 gcc -fno-stack-protector -m32 -c c/testing.c -o bin/testing.o
 gcc -fno-stack-protector -m32 -c c/buddy.c   -o bin/buddy.o
 gcc -fno-stack-protector -m32 -c c/kio.c     -o bin/kio.o
-ld -m elf_i386 -T link.ld -o bin/kernel bin/kasm.o bin/kc.o bin/kmalloc.o bin/display.o bin/testing.o bin/buddy.o bin/kio.o
-rm bin/kasm.o  bin/kc.o bin/kmalloc.o bin/display.o bin/testing.o bin/buddy.o bin/kio.o
+gcc -fno-stack-protector -m32 -c c/ksh.c     -o bin/ksh.o
+
+ld -m elf_i386 -T link.ld -o bin/kernel bin/kasm.o bin/kc.o bin/kmalloc.o bin/display.o bin/testing.o bin/buddy.o bin/kio.o bin/ksh.o
+rm bin/kasm.o  bin/kc.o bin/kmalloc.o bin/display.o bin/testing.o bin/buddy.o bin/kio.o bin/ksh.o

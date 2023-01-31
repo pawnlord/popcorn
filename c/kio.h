@@ -24,3 +24,4 @@ char readch(IOStream *stream);
 
 void writech(IOStream *stream, char ch);
 
+void get_line(char *buf, int sz);

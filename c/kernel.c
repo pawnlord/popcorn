@@ -5,8 +5,9 @@
 #include "stdlib.h"
 #include "kio.h"
 #include "display.h"
-
+#include "ksh.h"
 extern void keyboard_handler(void);
+extern void out_handler(void);
 extern void error_handler(void);
 extern char read_port(unsigned short port);
 extern void write_port(unsigned short port, unsigned short data);
@@ -28,7 +29,7 @@ struct IDT_entry{
 struct IDT_entry IDT[IDT_SIZE];
 
 void idt_init(void){
-    unsigned long keyboard_addr;
+    unsigned long keyboard_addr, out_addr;
     unsigned long idt_addr;
     unsigned long idt_ptr[2];
 
@@ -38,6 +39,13 @@ void idt_init(void){
     IDT[0x21].zero = 0;
     IDT[0x21].type_attr = 0x8e;
     IDT[0x21].offset_high = (keyboard_addr & 0xFFFF0000) >> 16;
+
+    out_addr = (unsigned long)out_handler;
+    IDT[0x80].offset_low = out_addr & 0xFFFF;
+    IDT[0x80].selector = 0x08;
+    IDT[0x80].zero = 0;
+    IDT[0x80].type_attr = 0x8e;
+    IDT[0x80].offset_high = (out_addr & 0xFFFF0000) >> 16;
 
 
     /*     Ports
@@ -102,13 +110,14 @@ void kmain(void) {
     print_nl();
     println_int(1);
 
-
-    while(1){
-	if(press_flag != local_press_flag){
-	    handle_io();
-	    local_press_flag = press_flag;
-	}
-	handle_stdout();
-    }
+    
+    sh();
+    /* while(1){ */
+    /* 	if(press_flag != local_press_flag){ */
+    /* 	    handle_io(); */
+    /* 	    local_press_flag = press_flag; */
+    /* 	} */
+    /* 	handle_stdout(); */
+    /* } */
     return;
 }
