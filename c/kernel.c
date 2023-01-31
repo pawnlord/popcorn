@@ -5,7 +5,6 @@
 #include "stdlib.h"
 #include "kio.h"
 #include "display.h"
-#include "keyboard_map.h"
 
 extern void keyboard_handler(void);
 extern void error_handler(void);
@@ -72,21 +71,21 @@ void idt_init(void){
 }
 
 void handle_io(){
-    char keycode = readch(stdin);
+    char c = readch(stdin);
 
-    if(keycode == 0)
+    if(c == 0)
 	return;
-    if(keycode <= 0)
+    if(c <= 0)
 	return;
-    if(keycode == ENTER_KEY){
+    if(c == '\n'){
 	print_nl();
 	return;
     }
-    if(keycode == BACKSPACE){
+    if(c == '\b'){
 	backspace();
 	return;
     }
-    kputc(keyboard_map[(unsigned char) keycode]);
+    kputc(c);
 }
 
 

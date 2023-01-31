@@ -1,5 +1,6 @@
 #include "kio.h"
 #include "stdlib.h"
+#include "keyboard_map.h"
 
 extern char read_port(unsigned short port);
 extern void write_port(unsigned short port, unsigned short data);
@@ -49,7 +50,7 @@ void keyboard_handler_main(void){
     if(status & 0x01){
 	keycode = read_port(KBRD_DATA);
 	press_flag = !press_flag;
-    	writech(stdin, keycode);
+    	writech(stdin, keyboard_map[(unsigned char) keycode]);
     }
 }
 
