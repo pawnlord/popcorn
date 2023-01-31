@@ -94,14 +94,14 @@ void kmain(void) {
     const char *str = "popcorn colonel V1.0.0\0";
     clear();
     mem_init();
+    print(str);
+    print_nl();
+    println_int(1);
+
     idt_init();
     kb_init();
     local_press_flag = press_flag;
     // End init
-
-    print(str);
-    print_nl();
-    println_int(1);
 
 
     while(1){
@@ -109,7 +109,6 @@ void kmain(void) {
 	    handle_io();
 	    local_press_flag = press_flag;
 	}
-	handle_stdout();
     }
     return;
 }
