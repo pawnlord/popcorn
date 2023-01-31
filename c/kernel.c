@@ -96,6 +96,7 @@ void kmain(void) {
     mem_init();
     print(str);
     print_nl();
+    println_int(1);
 
     idt_init();
     kb_init();

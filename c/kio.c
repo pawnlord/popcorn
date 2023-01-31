@@ -7,6 +7,7 @@ extern void write_port(unsigned short port, unsigned short data);
 char press_flag = 0; // alternates between 0 and 1 as keyboard is pressed
 
 IOStream *stdin;
+IOStream *stdout;
 
 void test_io_stream(void){
     writech(stdin, 'h');
@@ -31,6 +32,7 @@ void test_io_stream(void){
 /* keyboard functions */
 void kb_init(void){
     stdin = init_io_stream(1000);
+    stdout = init_io_stream(1000);
     test_io_stream();
     unsigned char val = (unsigned char)read_port(0x21);
     val &= ~2;
@@ -74,7 +76,6 @@ char readch(IOStream *stream){
 }
 
 void writech(IOStream *stream, char ch){
-
     stream->idx_end += 1;
     stream->idx_end %= stream->sz; 
     stream->buf[stream->idx_end] = ch;
