@@ -38,7 +38,7 @@ void shiftup(int lines){
 
 void kputc(char c){
     writech(stdout, c);
-    display_int();
+    handle_stdout();
 }
 
 
@@ -99,11 +99,13 @@ void itos(int num, char *str, int size){
     }
     
 }
+
 void backspace(void){
     curr = curr - 2;
     vidptr[curr] = '\0';
     vidptr[curr + 1] = 0;
 }
+
 void handle_stdout(void){
     char c;
     write_port(0x20, 0x20);
@@ -120,7 +122,7 @@ void handle_stdout(void){
 	if (curr + 2 > LINES*CLMN_IN_LN*BYTES_PER_ELM){
 	    shiftup(1);
 	}
-
+	
 	vidptr[curr++] = c;
 	vidptr[curr++] = 0x07;
 

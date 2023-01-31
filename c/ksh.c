@@ -12,7 +12,6 @@ void sh(){
     while(1){
 	print(prompt);
 	get_line(buf, 250);
-	println(buf);
-	
+	println(buf);	
     }
 }

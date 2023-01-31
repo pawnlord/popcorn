@@ -50,6 +50,9 @@ void keyboard_handler_main(void){
     if(status & 0x01){
 	keycode = read_port(KBRD_DATA);
 	press_flag = !press_flag;
+	if(keycode < 0){
+	    return;
+	}
     	writech(stdin, keyboard_map[(unsigned char) keycode]);
     }
 }
