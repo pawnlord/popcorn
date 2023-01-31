@@ -16,4 +16,5 @@ void println_int(int num);
 void itos(int num, char *str, int size);
 void print_nl(void);
 void backspace(void);
+void handle_stdout(void);
 #endif

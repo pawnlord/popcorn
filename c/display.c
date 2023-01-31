@@ -35,21 +35,15 @@ void shiftup(int lines){
 }
 
 void kputc(char c){
-
-    if (curr + 2 > LINES*CLMN_IN_LN*BYTES_PER_ELM){
-	shiftup(1);
-    }
-
-    vidptr[curr++] = c;
-    vidptr[curr++] = 0x07;
+    writech(stdout, c);
 }
 
 
 void print(const char *str){
     unsigned int j = 0;
     while(str[j] != '\0'){
-      kputc(str[j]);
-      ++j;
+	kputc(str[j]);
+	++j;
     }
 }
 void println(const char *str){
@@ -79,13 +73,8 @@ void println_int(int num){
     print_int(num);
     print_nl();
 }
-void print_nl(void)
-{
-    static unsigned int line_size = BYTES_PER_ELM * CLMN_IN_LN;
-    curr = curr + (line_size - curr % (line_size));
-    if (curr > LINES*CLMN_IN_LN*BYTES_PER_ELM){
-	shiftup(1);
-    }
+void print_nl(void){
+    writech(stdout, '\n');
 }
 
 void itos(int num, char *str, int size){
@@ -111,4 +100,24 @@ void backspace(void){
     curr = curr - 2;
     vidptr[curr] = '\0';
     vidptr[curr + 1] = 0;
+}
+void handle_stdout(void){
+    char c;
+    static unsigned int line_size = BYTES_PER_ELM * CLMN_IN_LN;
+    while((c = readch(stdout))){
+	if(c == '\n'){
+	    curr = curr + (line_size - curr % (line_size));
+	    if (curr > LINES*CLMN_IN_LN*BYTES_PER_ELM){
+		shiftup(1);
+	    }
+	    continue;
+	}
+	if (curr + 2 > LINES*CLMN_IN_LN*BYTES_PER_ELM){
+	    shiftup(1);
+	}
+
+	vidptr[curr++] = c;
+	vidptr[curr++] = 0x07;
+
+    }
 }
