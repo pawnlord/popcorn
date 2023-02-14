@@ -26,3 +26,7 @@ void gdt_set_flags(GDT_Entry *gdt_entry, uint32_t flags){
     gdt_entry->limit2flags &= 0x0F;
     gdt_entry->limit2flags |= flags << 16;
 }
+
+int execvp(const char *command, char *argv[]){
+    return 0;
+}

@@ -32,7 +32,7 @@ PageTable *get_next_page_table() {
     return next_page_table++;
 }
 
-ProcessState kernel_state = {kernel_page_dir, 0x0, 0x0};
+ProcessState kernel_state = {1, 0, kernel_page_dir, 0x0, 0x0};
 
 ProcessState *process_state = &kernel_state;
 

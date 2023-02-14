@@ -17,6 +17,9 @@ typedef struct BlockInfo{
 } BlockInfo;
 
 typedef struct ProcessState{
+    uint32_t processID;
+    uint32_t parentID;
+    
     uint32_t *page_dir;
     unsigned char *brk_ptr;
     uint32_t allocated;
