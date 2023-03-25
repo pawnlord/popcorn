@@ -14,7 +14,7 @@ char gdt_get_flags(GDT_Entry gdt_entry){
 void gdt_set_base(GDT_Entry *gdt_entry, uint32_t base){
     gdt_entry->base1 = base & 0x0000FFFF;
     gdt_entry->base2 = base & 0x00FF0000;
-    gdt_entry->base1 = base & 0xFF000000;
+    gdt_entry->base3 = base & 0xFF000000;
 }
 void gdt_set_limit(GDT_Entry *gdt_entry, uint32_t limit){
     gdt_entry->limit1 = limit & 0x0FFFF;
@@ -24,9 +24,13 @@ void gdt_set_limit(GDT_Entry *gdt_entry, uint32_t limit){
 }
 void gdt_set_flags(GDT_Entry *gdt_entry, uint32_t flags){
     gdt_entry->limit2flags &= 0x0F;
-    gdt_entry->limit2flags |= flags << 16;
+    gdt_entry->limit2flags |= flags << 4;
 }
 
 int execvp(const char *command, char *argv[]){
-    return 0;
+    
+}
+
+int fork(){
+    
 }

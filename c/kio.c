@@ -43,11 +43,13 @@ void kb_init(void){
 void keyboard_handler_main(void){
     unsigned char status;
     char keycode;
+    
     write_port(0x20, 0x20);
 
     status = read_port(KBRD_STAT);
 
     if(status & 0x01){
+      
 	keycode = read_port(KBRD_DATA);
 	press_flag = !press_flag;
 	if(keycode < 0){

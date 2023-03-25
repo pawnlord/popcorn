@@ -4,7 +4,7 @@
 #include "display.h"
 #include "stdlib.h"
 #include "buddy.h"
-
+#include "string.h"
 
 extern unsigned char *get_heap_space(void);
 extern unsigned char *get_stack_space(void);
@@ -288,5 +288,12 @@ void free(void *ptr) {
     block->free = 1;    
     if(block <= current_block){ // TODO: make sure this block is in the chain
 	current_block = block;
+    }
+}
+
+
+void memset(char *buf, char s, uint32_t sz){
+    for(uint32_t i = 0; i < sz; i++){
+	buf[i] = s;
     }
 }

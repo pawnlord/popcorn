@@ -3,10 +3,12 @@
 #define IDT_SIZE 256
 #define GDT_SIZE 6
 
+#include "string.h"
 #include "stdlib.h"
 #include "kio.h"
 #include "display.h"
 #include "ksh.h"
+#include "task.h"
 extern void keyboard_handler(void);
 extern void out_handler(void);
 extern void error_handler(void);
@@ -14,9 +16,10 @@ extern char read_port(unsigned short port);
 extern void write_port(unsigned short port, unsigned short data);
 extern void load_idt(unsigned long *idt_ptr);
 extern void load_gdt(unsigned long *gdt_ptr);
-extern void load_tss(unsigned char tss_descriptor);
+extern void load_tss(unsigned short tss_descriptor);
 extern unsigned char *get_heap_space(void);
 extern unsigned char *get_stack_space(void);
+extern unsigned char *get_stack_ptr(void);
 extern IOStream *stdin;
 extern char press_flag;
 extern void disable_ints(void);
@@ -46,7 +49,7 @@ void idt_init(void){
     unsigned long keyboard_addr, out_addr;
     unsigned long idt_addr;
     unsigned long idt_ptr[2];
-
+    disable_ints();
     add_idt_entry((unsigned long)keyboard_handler, 0x21, 0x08, 0x8e);
     add_idt_entry((unsigned long)out_handler, 0x80, 0x08, 0x8e);
 
@@ -79,61 +82,20 @@ void idt_init(void){
     idt_ptr[1] = idt_addr >> 16;
 
     load_idt(idt_ptr);
+    enable_ints();
 }
 
-typedef struct ProtectedTSS {
-    unsigned short link;
-    unsigned short res1; // cannot be touched
-    uint32_t ESP0;
-    unsigned short SS0;
-    unsigned short res2; // cannot be touched
-    uint32_t ESP1;
-    unsigned short SS1;
-    unsigned short res3; // cannot be touched
-    uint32_t ESP2;
-    unsigned short SS2;
-    unsigned short res4; // cannot be touched
-    uint32_t ESP3;
-    uint32_t CR3;
-    uint32_t EIP;
-    uint32_t EFLAGS;
-    uint32_t EAX;
-    uint32_t ECX;
-    uint32_t EDX;
-    uint32_t EBX;
-    uint32_t ESP;
-    uint32_t EBP;
-    uint32_t ESI;
-    uint32_t EDI;
-    unsigned short ES;
-    unsigned short res5; // cannot be touched
-    unsigned short CS;
-    unsigned short res6; // cannot be touched
-    unsigned short SS;
-    unsigned short res7; // cannot be touched
-    unsigned short DS;
-    unsigned short res8; // cannot be touched
-    unsigned short FS;
-    unsigned short res9; // cannot be touched
-    unsigned short GS;
-    unsigned short res10; // cannot be touched
-    unsigned short LDTR;
-    unsigned short res11; // cannot be touched
-    unsigned short res12; // cannot be touched
-    unsigned short IOPB;    
-    uint32_t SSP;
-} ProtectedTSS;
 
-ProtectedTSS TSS;
+Task tasks[MAX_TASKS];
 struct GDT_Entry GDT[GDT_SIZE];
 
-void init_gdt(){
+void gdt_init(){
     unsigned long gdt_ptr[2];
     kasserteq(sizeof(GDT_Entry), 8, "Size of GDT Entry");
     disable_ints();
     gdt_set_base(&GDT[0], 0);
     gdt_set_limit(&GDT[0], 0);
-    GDT[1].access = 0x0;
+    GDT[0].access = 0x0;
     gdt_set_flags(&GDT[0], 0);
     
     gdt_set_base(&GDT[1], 0);
@@ -157,18 +119,23 @@ void init_gdt(){
     GDT[4].access = 0xF2;
     gdt_set_flags(&GDT[4], 0xC);
     
-    gdt_set_base(&GDT[5], (uint32_t)&TSS);
-    gdt_set_limit(&GDT[5], sizeof(TSS));
+    ProtectedTSS *TSS = &tasks[0].tss; 
+    gdt_set_base(&GDT[5], (uint32_t)TSS);
+    gdt_set_limit(&GDT[5], sizeof *TSS);
     GDT[5].access = 0x89;
-    gdt_set_flags(&GDT[5], 0x40);
-
+    gdt_set_flags(&GDT[5], 0x0);
+    
+    memset(TSS, 0, sizeof *TSS);
+    
+    TSS->SS0  = 0;
+    TSS->ESP0  = get_stack_ptr();
     unsigned long gdt_addr = (unsigned long) GDT;
-    gdt_ptr[0] = (sizeof(struct IDT_entry) * GDT_SIZE) + ((gdt_addr & 0xFFFF) << 16);
+    gdt_ptr[0] = (sizeof(struct IDT_entry) * GDT_SIZE) + ((gdt_addr & 0xFFFF) << 16); 
     gdt_ptr[1] = gdt_addr >> 16;
-
-
-    load_gdt(gdt_ptr);
-    load_tss(0x28);
+    
+    
+    //    load_gdt(gdt_ptr);
+    //load_tss(0x28);
     enable_ints();
 }
 
@@ -196,6 +163,7 @@ void kmain(void) {
     clear();
     mem_init();
     idt_init();
+    gdt_init();
     kb_init();
     local_press_flag = press_flag;
     // End init
