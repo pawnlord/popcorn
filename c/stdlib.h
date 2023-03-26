@@ -50,23 +50,6 @@ void kassertneq(uint32_t val1, uint32_t val2, const char *msg);
   Command Execution
  */
 
-typedef struct GDT_Entry{
-  unsigned short limit1;
-  unsigned short base1;
-  unsigned char base2;
-  unsigned char access;
-  unsigned char limit2flags;
-  unsigned char base3;
-} GDT_Entry;
-
-uint32_t gdt_get_base(GDT_Entry gdt_entry);
-uint32_t gdt_get_limit(GDT_Entry gdt_entry);
-char gdt_get_flags(GDT_Entry gdt_entry);
-
-void gdt_set_base(GDT_Entry *gdt_entry, uint32_t base);
-void gdt_set_limit(GDT_Entry *gdt_entry, uint32_t limit);
-void gdt_set_flags(GDT_Entry *gdt_entry, uint32_t flags);
-
 int execvp(const char *command, char *argv[]);
 int fork();
 

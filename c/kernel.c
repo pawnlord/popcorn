@@ -1,7 +1,6 @@
 
 
 #define IDT_SIZE 256
-#define GDT_SIZE 6
 
 #include "string.h"
 #include "stdlib.h"
@@ -20,10 +19,12 @@ extern void load_tss(unsigned short tss_descriptor);
 extern unsigned char *get_heap_space(void);
 extern unsigned char *get_stack_space(void);
 extern unsigned char *get_stack_ptr(void);
+extern unsigned char *get_esp(void);
 extern IOStream *stdin;
 extern char press_flag;
 extern void disable_ints(void);
 extern void enable_ints(void);
+extern void reload_segments(void);
 char local_press_flag;
 
 /* IDT/interrupt functions */
@@ -85,59 +86,6 @@ void idt_init(void){
     enable_ints();
 }
 
-
-Task tasks[MAX_TASKS];
-struct GDT_Entry GDT[GDT_SIZE];
-
-void gdt_init(){
-    unsigned long gdt_ptr[2];
-    kasserteq(sizeof(GDT_Entry), 8, "Size of GDT Entry");
-    disable_ints();
-    gdt_set_base(&GDT[0], 0);
-    gdt_set_limit(&GDT[0], 0);
-    GDT[0].access = 0x0;
-    gdt_set_flags(&GDT[0], 0);
-    
-    gdt_set_base(&GDT[1], 0);
-    gdt_set_limit(&GDT[1], 0xFFFFF);
-    GDT[1].access = 0x9A;
-    gdt_set_flags(&GDT[1], 0xC);
-    
-    gdt_set_base(&GDT[2], 0);
-    gdt_set_limit(&GDT[2], 0xFFFFF);
-    GDT[2].access = 0x92;
-    gdt_set_flags(&GDT[2], 0xC);
-    
-    gdt_set_base(&GDT[3], 0);
-    gdt_set_limit(&GDT[3], 0xFFFFF);
-    GDT[3].access = 0xFA;
-    gdt_set_flags(&GDT[3], 0xC);
-
-    
-    gdt_set_base(&GDT[4], 0);
-    gdt_set_limit(&GDT[4], 0xFFFFF);
-    GDT[4].access = 0xF2;
-    gdt_set_flags(&GDT[4], 0xC);
-    
-    ProtectedTSS *TSS = &tasks[0].tss; 
-    gdt_set_base(&GDT[5], (uint32_t)TSS);
-    gdt_set_limit(&GDT[5], sizeof *TSS);
-    GDT[5].access = 0x89;
-    gdt_set_flags(&GDT[5], 0x0);
-    
-    memset(TSS, 0, sizeof *TSS);
-    
-    TSS->SS0  = 0;
-    TSS->ESP0  = get_stack_ptr();
-    unsigned long gdt_addr = (unsigned long) GDT;
-    gdt_ptr[0] = (sizeof(struct IDT_entry) * GDT_SIZE) + ((gdt_addr & 0xFFFF) << 16); 
-    gdt_ptr[1] = gdt_addr >> 16;
-    
-    
-    //    load_gdt(gdt_ptr);
-    //load_tss(0x28);
-    enable_ints();
-}
 
 void handle_io(){
     char c = readch(stdin);

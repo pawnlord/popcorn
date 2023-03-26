@@ -1,9 +1,21 @@
-#define KERNEL_DS 0
-#define KERNEL_CS 0
-#define USER_DS 0
-#define USER_CS 0
+#define KERNEL_DS 0x10
+#define KERNEL_CS 0x8
+#define USER_DS 0x10
+#define USER_CS 0x8
 
 #define MAX_TASKS 255
+
+#include "stdlib.h"
+
+typedef struct GDT_Entry{
+  unsigned short limit1;
+  unsigned short base1;
+  unsigned char base2;
+  unsigned char access;
+  unsigned char limit2flags;
+  unsigned char base3;
+} GDT_Entry;
+
 
 typedef struct ProtectedTSS {
     unsigned short link;
@@ -46,12 +58,26 @@ typedef struct ProtectedTSS {
     unsigned short res12; // cannot be touched
     unsigned short IOPB;    
     uint32_t SSP;
+    unsigned long io_bitmap[33];
 } ProtectedTSS;
 
 typedef enum TaskState{
   TASK_STOPPED,
   TASK_RUNNING
 } TaskState;
+
+
+typedef struct PushedRegs{
+    uint32_t eax;
+    uint32_t ecx;
+    uint32_t edx;
+    uint32_t ebx;
+    uint32_t esp;
+    uint32_t ebp;
+    uint32_t esi;
+    uint32_t edi;
+    uint32_t eflags;
+} PushedRegs;
 
 typedef struct Task {
   ProtectedTSS tss;
@@ -62,4 +88,16 @@ typedef struct Task {
   TaskState state;
 } Task;
 
-void setup_tss(ProtectedTSS *tss);
+void setup_tss(ProtectedTSS *tss, unsigned char* esp0);
+
+
+
+uint32_t gdt_get_base(GDT_Entry gdt_entry);
+uint32_t gdt_get_limit(GDT_Entry gdt_entry);
+char gdt_get_flags(GDT_Entry gdt_entry);
+
+void gdt_set_base(GDT_Entry *gdt_entry, uint32_t base);
+void gdt_set_limit(GDT_Entry *gdt_entry, uint32_t limit);
+void gdt_set_flags(GDT_Entry *gdt_entry, uint32_t flags);
+
+void gdt_init(void);
