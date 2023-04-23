@@ -45,8 +45,8 @@ void kputc(char c){
 void print(const char *str){
     unsigned int j = 0;
     while(str[j] != '\0'){
-	kputc(str[j]);
-	++j;
+      kputc(str[j]);
+      ++j;
     }
 }
 void println(const char *str){
@@ -57,16 +57,16 @@ void print_int(int num){
     int count = 0;
     int temp = num;
     do{
-	temp = temp / 10;
-	count+=1;
+      temp = temp / 10;
+      count+=1;
     } while(temp > 0);
     char *str = malloc(count+1);
     str[count] = '\0';
     while(count > 0){
-	count--;
-	char dig = (num % 10)+'0';
-	str[count] = dig;
-	num = num / 10;
+      count--;
+      char dig = (num % 10)+'0';
+      str[count] = dig;
+      num = num / 10;
     };
     print(str);
     free(str);

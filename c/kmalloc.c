@@ -124,6 +124,7 @@ unsigned char *align_sbrk(size_t sz, int align) {
 
 void sbrk_test() {
     unsigned char *test = sbrk(0x1000);
+    println("sbrk_test");
     print_int((uint32_t)test);
     print_nl();
     print_int((uint32_t)process_state->brk_ptr);
@@ -219,7 +220,6 @@ void mem_init(){
     current_block->free = 1;
     current_block->allocated = 0;
     test_malloc();
-    
 }
 
 /*
@@ -285,7 +285,7 @@ void free(void *ptr) {
     kasserteq(block->free, 0, "Attempted to free block that's already free");
     kassertneq(block->allocated, 0, "Attempted to free unallocated block");
 
-    block->free = 1;    
+    block->free = 1;
     if(block <= current_block){ // TODO: make sure this block is in the chain
 	current_block = block;
     }

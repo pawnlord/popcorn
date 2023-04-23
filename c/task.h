@@ -1,7 +1,7 @@
 #define KERNEL_DS 0x10
 #define KERNEL_CS 0x8
-#define USER_DS 0x10
-#define USER_CS 0x8
+#define USER_DS 0x20
+#define USER_CS 0x18
 
 #define MAX_TASKS 255
 
@@ -61,10 +61,6 @@ typedef struct ProtectedTSS {
     unsigned long io_bitmap[33];
 } ProtectedTSS;
 
-typedef enum TaskState{
-  TASK_STOPPED,
-  TASK_RUNNING
-} TaskState;
 
 
 typedef struct PushedRegs{
@@ -79,18 +75,22 @@ typedef struct PushedRegs{
     uint32_t eflags;
 } PushedRegs;
 
+typedef enum TaskState{
+  TASK_STOPPED,
+  TASK_RUNNING
+} TaskState;
 typedef struct Task {
-  ProtectedTSS tss;
-  int num;
-  int pid;
-  int kernel_stack_page;
-  int task_stack_page;
+  uint32_t num;
+  uint32_t pid;
+  uint32_t *page_dir;
+  uint32_t ESP; // esp for task
+  uint32_t ESP0; // esp for privilege escalation
   TaskState state;
+  struct Task *next_task;
 } Task;
 
-void setup_tss(ProtectedTSS *tss, unsigned char* esp0);
-
-
+void init_multitasking();
+void init_task(Task *task);
 
 uint32_t gdt_get_base(GDT_Entry gdt_entry);
 uint32_t gdt_get_limit(GDT_Entry gdt_entry);
@@ -101,3 +101,5 @@ void gdt_set_limit(GDT_Entry *gdt_entry, uint32_t limit);
 void gdt_set_flags(GDT_Entry *gdt_entry, uint32_t flags);
 
 void gdt_init(void);
+
+Task *get_task(void);

@@ -24,7 +24,11 @@ extern IOStream *stdin;
 extern char press_flag;
 extern void disable_ints(void);
 extern void enable_ints(void);
-extern void reload_segments(void);
+extern void jump_usermode(void (*fp)(void));
+extern void test_user_function_fail(void);
+void test_user_function_success(void){
+  println("Hello!!");
+}
 char local_press_flag;
 
 /* IDT/interrupt functions */
@@ -70,11 +74,11 @@ void idt_init(void){
 	
     write_port (0x21, 0x00);
     write_port (0xA1, 0x00);
-	
+
     write_port (0x21, 0x01);
     write_port (0xA1, 0x01);
 
-	
+
     write_port (0x21, 0xFF);
     write_port (0xA1, 0xFF); // Turn PIC off
 
@@ -111,16 +115,15 @@ void kmain(void) {
     clear();
     mem_init();
     idt_init();
-    gdt_init();
     kb_init();
+    gdt_init();
     local_press_flag = press_flag;
     // End init
 
     print(str);
     print_nl();
-    println_int(1);
-
-    
+    //println_int(1);
+    //    jump_usermode(test_user_function_fail);
     sh();
     /* while(1){ */
     /* 	if(press_flag != local_press_flag){ */

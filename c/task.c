@@ -1,9 +1,14 @@
 #include "task.h"
-#define GDT_SIZE 6
+#include "display.h"
+#define GDT_SIZE 50
 
 
+int next_pid = 1;
+int current_gdt_entry = 6;
+ProtectedTSS tss; // TSS for first CPU
 Task tasks[MAX_TASKS];
 Task *kernel_task = &tasks[0];
+Task *current_task;
 struct GDT_Entry GDT[GDT_SIZE];
 
 extern void load_idt(unsigned long *idt_ptr);
@@ -17,25 +22,13 @@ extern void disable_ints(void);
 extern void enable_ints(void);
 extern void reload_segments(void);
 
+
+extern char press_flag;
+
 extern unsigned char *get_esp(void);
 
-void setup_tss(ProtectedTSS *tss, unsigned char* esp0){ 
-    tss->CS = KERNEL_CS;
-    tss->DS = KERNEL_DS;
-    tss->ES = KERNEL_DS;
-    tss->SS = KERNEL_DS;
-    tss->DS = KERNEL_DS;
-    tss->FS = USER_DS;
-    tss->GS = KERNEL_DS;
-    tss->SS0 = KERNEL_DS;
-    tss->ESP0 = (uint32_t) esp0;
-    tss->ESP1 = (uint32_t) esp0;
-    tss->ESP2 = (uint32_t) esp0;
-
-    tss->IOPB = ((uint32_t)&tss->io_bitmap) - ((uint32_t)tss);
-    for(int i = 0; i < 33; i++){
-	tss->io_bitmap[i] = ~0;
-    }
+Task *get_task(void){
+    return &tasks[next_pid];
 }
 
 uint32_t gdt_get_base(GDT_Entry gdt_entry){
@@ -90,28 +83,35 @@ void gdt_init(void){
     GDT[3].access = 0xFA;
     gdt_set_flags(&GDT[3], 0xC);
 
-    
+
     gdt_set_base(&GDT[4], 0);
     gdt_set_limit(&GDT[4], 0xFFFFF);
     GDT[4].access = 0xF2;
     gdt_set_flags(&GDT[4], 0xC);
-    
-    ProtectedTSS *TSS = &kernel_task->tss; 
-    gdt_set_base(&GDT[5], (uint32_t)TSS);
-    gdt_set_limit(&GDT[5], sizeof *TSS);
+
+    gdt_set_base(&GDT[5], (uint32_t)&tss);
+    gdt_set_limit(&GDT[5], sizeof(tss) - 1);
     GDT[5].access = 0x89;
     gdt_set_flags(&GDT[5], 0x0);
-    
-    memset((char *)TSS, 0, sizeof *TSS);
-    
-    setup_tss(TSS, get_esp());
+    unsigned long tss_addr = (unsigned long)&tss;
+    unsigned long gdt_expected = ((unsigned long) (tss_addr &       0x00ffffff) << 16)
+      /* attributes, 32-bit TSS, present,  */
+      /* limit, it's less than 2^16 anyhow, so no need for th eupper nibble */
+      + (sizeof(ProtectedTSS)) - 1;
+    unsigned long gdt_upper = ((unsigned long) (tss_addr & 0xff000000)) + 0x00008900LL;
+    //kasserteql(gdt_expected, (unsigned long long) (GDT[5]), "GDT entry for TSS incorrect");
+    //println_int(gdt_expected);
+    println_int(*(uint32_t*)(&GDT[5]));
+    println_int(gdt_expected);
+    println_int(*(((uint32_t*)(&GDT[5]))+1));
+    println_int(gdt_upper);
+
     unsigned long gdt_addr = (unsigned long) GDT;
     gdt_ptr[0] = (sizeof(GDT_Entry) * GDT_SIZE) + ((gdt_addr & 0xFFFF) << 16); 
     gdt_ptr[1] = gdt_addr >> 16;
-    
-    reload_segments();
-    
+
     load_gdt(gdt_ptr);
-    
+    //load_tss(0x8*5);
+    asm volatile("ltr %%ax": : "a" ((5)<<3));
     enable_ints();
 }
