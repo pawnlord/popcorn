@@ -68,9 +68,7 @@ switch_task:
     ; credit: https://wiki.osdev.org/Getting_to_Ring_3#iret_method
 jump_usermode:
 
-    mov bx, 0
-    div bx
-	mov ax, (4 * 8) | 3 ; ring 3 data with bottom 2 bits set for ring 3
+    mov ax, (4 * 8) | 3 ; ring 3 data with bottom 2 bits set for ring 3
 	mov ds, ax
 	mov es, ax
 	mov fs, ax

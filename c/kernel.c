@@ -71,7 +71,8 @@ void idt_init(void){
     unsigned long idt_ptr[2];
     disable_ints();
     for(int i = 0; i < 32; i++){
-      add_idt_entry((unsigned long)error_handler, i, 0x08, 0x8F);
+      // STUPID HACK ALERT !!!!!
+      add_idt_entry((unsigned long)(error_handler + 4*i), i, 0x08, 0x8F);
     }
     add_idt_entry((unsigned long)keyboard_handler, 0x21, 0x08, 0x8e);
     add_idt_entry((unsigned long)out_handler, 0x80, 0x08, 0x8e);
