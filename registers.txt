@@ -1,0 +1,122 @@
+eax            0x100122            1048866
+ecx            0x102b6c            1059692
+edx            0x203fe0            2113504
+ebx            0x1039cc            1063372
+esp            0x203fcc            0x203fcc
+ebp            0x203ff8            0x203ff8
+esi            0x0                 0
+edi            0x1000              4096
+eip            0x1000ec            0x1000ec <jump_usermode>
+eflags         0x216               [ IOPL=0 IF AF PF ]
+cs             0x8                 8
+ss             0x10                16
+ds             0x10                16
+es             0x10                16
+fs             0x10                16
+gs             0x10                16
+fs_base        0x0                 0
+gs_base        0x0                 0
+k_gs_base      0x0                 0
+cr0            0x80000011          [ PG ET PE ]
+cr2            0x0                 0
+cr3            0x305000            [ PDBR=773 PCID=0 ]
+cr4            0x0                 [ ]
+cr8            0x0                 0
+efer           0x0                 [ ]
+
+
+2
+eax            0x6b                107
+ecx            0xa                 10
+edx            0x6c                108
+ebx            0x1039cc            1063372
+esp            0x203fb8            0x203fb8
+ebp            0x203ff8            0x203ff8
+esi            0x0                 0
+edi            0x1000              4096
+eip            0x10010f            0x10010f <jump_usermode+35>
+eflags         0x206               [ IOPL=0 IF PF ]
+cs             0x8                 8
+ss             0x10                16
+ds             0x23                35
+es             0x23                35
+fs             0x23                35
+gs             0x23                35
+fs_base        0x0                 0
+gs_base        0x0                 0
+k_gs_base      0x0                 0
+cr0            0x80000011          [ PG ET PE ]
+cr2            0x0                 0
+cr3            0x305000            [ PDBR=773 PCID=0 ]
+cr4            0x0                 [ ]
+cr8            0x0                 0
+efer           0x0                 [ ]
+
+
+before ret from test_user_function_success2
+eax            0x10010d            1048845
+ecx            0x102b64            1059684
+edx            0x203fe0            2113504
+ebx            0x1039cc            1063372
+esp            0x203fcc            0x203fcc
+ebp            0x203ff8            0x203ff8
+esi            0x0                 0
+edi            0x1000              4096
+eip            0x10010d            0x10010d <test_user_function_success2>
+eflags         0x216               [ IOPL=0 IF AF PF ]
+cs             0x1b                27
+ss             0x23                35
+ds             0x23                35
+es             0x23                35
+fs             0x23                35
+gs             0x23                35
+fs_base        0x0                 0
+gs_base        0x0                 0
+k_gs_base      0x0                 0
+cr0            0x80000011          [ PG ET PE ]
+cr2            0x0                 0
+cr3            0x305000            [ PDBR=773 PCID=0 ]
+cr4            0x0                 [ ]
+cr8            0x0                 0
+efer           0x0                 [ ]
+
+
+0x00102b64
+????? 0xe05b
+
+esp: 0x203fb8
+stacK:::
+0x203fb8:	0x0010011d
+(gdb) 
+0x203fbc:	0x0000001b
+(gdb) 
+0x203fc0:	0x00000216
+(gdb) 
+0x203fc4:	0x00203fcc
+(gdb) 
+0x203fc8:	0x00000023
+(gdb) 
+0x203fcc:	0x001003f6
+(gdb) 
+0x203fd0:	0x0010011d
+(gdb) 
+0x203fd4:	0x00203fe0
+(gdb) 
+0x203fd8:	0x00102b64
+(gdb) 
+0x203fdc:	0x001003c7
+(gdb) 
+0x203fe0:	0x00000000
+(gdb) 
+0x203fe4:	0x00000000
+(gdb) 
+0x203fe8:	0x00203fe0
+(gdb) 
+0x203fec:	0x00102b4c
+(gdb) 
+0x203ff0:	0x00000000
+(gdb) 
+0x203ff4:	0x00009500
+
+
+

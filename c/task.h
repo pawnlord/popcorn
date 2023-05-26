@@ -6,6 +6,7 @@
 #define MAX_TASKS 255
 
 #include "stdlib.h"
+#include "string.h"
 
 typedef struct GDT_Entry{
   unsigned short limit1;
@@ -14,7 +15,7 @@ typedef struct GDT_Entry{
   unsigned char access;
   unsigned char limit2flags;
   unsigned char base3;
-} GDT_Entry;
+} GDT_Entry __attribute__((packed));
 
 
 typedef struct ProtectedTSS {
@@ -100,6 +101,6 @@ void gdt_set_base(GDT_Entry *gdt_entry, uint32_t base);
 void gdt_set_limit(GDT_Entry *gdt_entry, uint32_t limit);
 void gdt_set_flags(GDT_Entry *gdt_entry, uint32_t flags);
 
-void gdt_init(void);
+void gdt_init(uint32_t esp0);
 
 Task *get_task(void);

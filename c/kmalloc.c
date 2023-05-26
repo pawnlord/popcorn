@@ -292,8 +292,9 @@ void free(void *ptr) {
 }
 
 
-void memset(char *buf, char s, uint32_t sz){
+void memset(void *vbuf, char s, uint32_t sz){
+    char *buf = (char*)vbuf;
     for(uint32_t i = 0; i < sz; i++){
-	buf[i] = s;
+      buf[i] = s;
     }
 }

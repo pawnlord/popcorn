@@ -1,2 +1,2 @@
 #include "stdlib.h"
-void memset(char *buf, char s, uint32_t sz);
+void memset(void *buf, char s, uint32_t sz);

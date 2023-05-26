@@ -5,14 +5,17 @@ section .text
 global switch_task
 global jump_usermode
 global test_user_function_fail
+global set_current_esp0
+global print_esp
 extern current_task
 extern tss
 extern println_int
+extern test_user_function_success
 global reload_segments
 reload_segments:
-	jmp 0x08:reload_cs
+	jmp 0x18:reload_cs
 reload_cs:
-	mov ax, 0x10
+	mov ax, 0x20
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
@@ -64,6 +67,7 @@ switch_task:
 
     ; credit: https://wiki.osdev.org/Getting_to_Ring_3#iret_method
 jump_usermode:
+	sti
 	mov ax, (4 * 8) | 3 ; ring 3 data with bottom 2 bits set for ring 3
 	mov ds, ax
 	mov es, ax
@@ -73,15 +77,26 @@ jump_usermode:
 	                            ; set up the stack frame iret expects
 	mov eax, esp
 	push (4 * 8) | 3 ; data selector
-	push eax ; c1urrent esp
+	push eax ; current esp
 	pushf ; eflags
 	push (3 * 8) | 3 ; code selector (ring 3 code with bottom 2 bits set for ring 3)
-    mov eax, [esp+4]
-	push eax ; instruction address to return to
-	iret
+ 	mov eax, test_user_function_success
+	push test_user_function_success ; instruction address to return to
+	call print_esp
+	iretd
 
 test_user_function_fail:
     cli
+    ret
+test_user_function_success2:
+    ret
+set_current_esp0:
+    mov [tss+4], esp
+    ret
+print_esp:
+    push esp
+    call println_int
+    pop esp
     ret
 
 section .bss

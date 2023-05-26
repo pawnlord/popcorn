@@ -1,9 +1,9 @@
 nasm -f elf32 asm/kernel.s -o bin/kasm.o
 nasm -f elf32 asm/task.s -o bin/_asm_task.o
 build_file(){
-    gcc -fno-stack-protector -m32 -c c/$1.c  -o bin/$1.o -Wno-builtin-declaration-mismatch
+    gcc -fno-stack-protector -m32 -g -c c/$1.c  -o bin/$1.o -Wno-builtin-declaration-mismatch
 }
-gcc -fno-stack-protector -m32 -c c/kernel.c  -o bin/kc.o -Wno-builtin-declaration-mismatch
+gcc -fno-stack-protector -m32 -g -c c/kernel.c  -o bin/kc.o -Wno-builtin-declaration-mismatch
 build_file kmalloc
 build_file display
 build_file testing

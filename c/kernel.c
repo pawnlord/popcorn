@@ -19,13 +19,15 @@ extern void load_tss(unsigned short tss_descriptor);
 extern unsigned char *get_heap_space(void);
 extern unsigned char *get_stack_space(void);
 extern unsigned char *get_stack_ptr(void);
-extern unsigned char *get_esp(void);
 extern IOStream *stdin;
 extern char press_flag;
 extern void disable_ints(void);
 extern void enable_ints(void);
 extern void jump_usermode(void (*fp)(void));
 extern void test_user_function_fail(void);
+extern void print_esp(void);
+extern uint32_t get_esp(void);
+extern ProtectedTSS tss;
 void test_user_function_success(void){
   println("Hello!!");
 }
@@ -55,8 +57,8 @@ void idt_init(void){
     unsigned long idt_addr;
     unsigned long idt_ptr[2];
     disable_ints();
-    add_idt_entry((unsigned long)keyboard_handler, 0x21, 0x08, 0x8e);
-    add_idt_entry((unsigned long)out_handler, 0x80, 0x08, 0x8e);
+    add_idt_entry((unsigned long)keyboard_handler, 0x21, 0x18, 0x8e);
+    add_idt_entry((unsigned long)out_handler, 0x80, 0x18, 0x8e);
 
 
     /*     Ports
@@ -67,11 +69,9 @@ void idt_init(void){
     write_port(0x20, 0x11);
     write_port(0xA0, 0x11);
 
-	
     write_port (0x21, 0x20);
     write_port (0xA1, 0x28);
 
-	
     write_port (0x21, 0x00);
     write_port (0xA1, 0x00);
 
@@ -92,21 +92,21 @@ void idt_init(void){
 
 
 void handle_io(){
-    char c = readch(stdin);
-
-    if(c == 0)
-	return;
-    if(c <= 0)
-	return;
-    if(c == '\n'){
-	print_nl();
-	return;
-    }
-    if(c == '\b'){
-	backspace();
-	return;
-    }
-    kputc(c);
+   char c = readch(stdin);
+   
+   if(c == 0)
+      return;
+   if(c <= 0)
+      return;
+   if(c == '\n'){
+      print_nl();
+      return;
+   }
+   if(c == '\b'){
+      backspace();
+      return;
+   }
+   kputc(c);
 }
 
 
@@ -116,15 +116,21 @@ void kmain(void) {
     mem_init();
     idt_init();
     kb_init();
-    gdt_init();
+    int esp0 = get_esp();
+    println_int(esp0);
+    gdt_init(esp0);
+
     local_press_flag = press_flag;
+    print_esp();
+
     // End init
 
     print(str);
     print_nl();
-    //println_int(1);
-    //    jump_usermode(test_user_function_fail);
+    kasserteq(esp0, tss.ESP0, "TSS esp0 and real esp0 do not match for leaving kernel mode");
+    jump_usermode(test_user_function_success);
     sh();
+    //while(1){}
     /* while(1){ */
     /* 	if(press_flag != local_press_flag){ */
     /* 	    handle_io(); */
