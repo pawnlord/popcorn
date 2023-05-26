@@ -67,7 +67,9 @@ switch_task:
 
     ; credit: https://wiki.osdev.org/Getting_to_Ring_3#iret_method
 jump_usermode:
-	sti
+
+    mov bx, 0
+    div bx
 	mov ax, (4 * 8) | 3 ; ring 3 data with bottom 2 bits set for ring 3
 	mov ds, ax
 	mov es, ax
@@ -80,9 +82,7 @@ jump_usermode:
 	push eax ; current esp
 	pushf ; eflags
 	push (3 * 8) | 3 ; code selector (ring 3 code with bottom 2 bits set for ring 3)
- 	mov eax, test_user_function_success
-	push test_user_function_success ; instruction address to return to
-	call print_esp
+ 	push test_user_function_success ; instruction address to return to
 	iretd
 
 test_user_function_fail:

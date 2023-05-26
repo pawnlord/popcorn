@@ -43,13 +43,26 @@ struct IDT_entry{
 };
 struct IDT_entry IDT[IDT_SIZE];
 
+
+
+void error_handler_main(uint32_t ercode){
+  write_port(0x20,0x20);
+  println("Exception!");
+  print("ercode: ");
+  println_int(ercode);
+  while(1);
+  //char temp = press_flag;
+  //while(temp == press_flag){} // TODO: Move to IO, make it work
+  return;
+}
+
+
 void add_idt_entry(unsigned long handler_addr, int entry_num, unsigned short int selector, unsigned char attr){
     IDT[entry_num].offset_low = handler_addr & 0xFFFF;
     IDT[entry_num].selector = selector;
     IDT[entry_num].zero = 0;
     IDT[entry_num].type_attr = attr;
     IDT[entry_num].offset_high = (handler_addr & 0xFFFF0000) >> 16;
-    
 }
 
 void idt_init(void){
@@ -57,9 +70,11 @@ void idt_init(void){
     unsigned long idt_addr;
     unsigned long idt_ptr[2];
     disable_ints();
-    add_idt_entry((unsigned long)keyboard_handler, 0x21, 0x18, 0x8e);
-    add_idt_entry((unsigned long)out_handler, 0x80, 0x18, 0x8e);
-
+    for(int i = 0; i < 32; i++){
+      add_idt_entry((unsigned long)error_handler, i, 0x08, 0x8F);
+    }
+    add_idt_entry((unsigned long)keyboard_handler, 0x21, 0x08, 0x8e);
+    add_idt_entry((unsigned long)out_handler, 0x80, 0x08, 0x8e);
 
     /*     Ports
      *	         PIC1	PIC2
@@ -108,6 +123,8 @@ void handle_io(){
    }
    kputc(c);
 }
+
+
 
 
 void kmain(void) {

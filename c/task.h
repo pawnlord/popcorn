@@ -15,7 +15,7 @@ typedef struct GDT_Entry{
   unsigned char access;
   unsigned char limit2flags;
   unsigned char base3;
-} GDT_Entry __attribute__((packed));
+} GDT_Entry;
 
 
 typedef struct ProtectedTSS {
