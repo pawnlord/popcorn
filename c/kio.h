@@ -6,11 +6,11 @@
 
 #include "display.h"
 
-typedef struct IOStream{
-  int sz;
-  volatile int idx_start;
-  volatile int idx_end;
-  char buf[];
+typedef struct IOStream {
+    int sz;
+    volatile int idx_start;
+    volatile int idx_end;
+    char buf[];
 } IOStream;
 
 /* keyboard functions */

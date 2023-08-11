@@ -1,4 +1,4 @@
-#include "stdlib.h"
 #include "display.h"
+#include "stdlib.h"
 
-void sh(); // main shell process
+void sh();  // main shell process

@@ -1,3 +1,7 @@
+#!/bin/bash -i
+shopt -s expand_aliases
+
+
 python asm/interrupt_gen.py
 nasm -f elf32 asm/kernel.s -o bin/kasm.o
 nasm -f elf32 asm/task.s -o bin/_asm_task.o

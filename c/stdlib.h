@@ -8,18 +8,17 @@ typedef int size_t;
 typedef unsigned long uint32_t;
 typedef unsigned char uint8_t;
 
-
-typedef struct BlockInfo{
+typedef struct BlockInfo {
     size_t sz;
     struct BlockInfo *next;
     char free;
     char allocated;
 } BlockInfo;
 
-typedef struct ProcessState{
+typedef struct ProcessState {
     uint32_t processID;
     uint32_t parentID;
-    
+
     uint32_t *page_dir;
     unsigned char *brk_ptr;
     uint32_t allocated;

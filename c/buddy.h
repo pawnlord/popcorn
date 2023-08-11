@@ -1,5 +1,6 @@
 /*
-  buddy allocation system, used to remember what real addresses we have available
+  buddy allocation system, used to remember what real addresses we have
+  available
  */
 #include "stdlib.h"
 
@@ -12,10 +13,10 @@
 #define MAX_BUDDIES 21
 #define RMVD_BUDS MAX_BUDDIES - BUDDIES
 // number of bytes used total
-#define BUDDIES_SIZE 0x40000 - ((1 << BUDDIES)/8)
+#define BUDDIES_SIZE 0x40000 - ((1 << BUDDIES) / 8)
 
-#define BUDDY_LEVEL(l) 0x40000 - ((1 << (RMVD_BUDS+BUDDIES-l)))/8  
-#define BUDDY_SIZE(l) BUDDIES_SIZE / (1<<l)
+#define BUDDY_LEVEL(l) 0x40000 - ((1 << (RMVD_BUDS + BUDDIES - l))) / 8
+#define BUDDY_SIZE(l) BUDDIES_SIZE / (1 << l)
 
 void init_buddy_alloc();
 

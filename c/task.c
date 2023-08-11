@@ -1,11 +1,11 @@
 #include "task.h"
+
 #include "display.h"
 #define GDT_SIZE 6
 
-
 int next_pid = 1;
 int current_gdt_entry = 6;
-ProtectedTSS tss; // TSS for first CPU
+ProtectedTSS tss;  // TSS for first CPU
 Task tasks[MAX_TASKS];
 Task *kernel_task = &tasks[0];
 Task *current_task;
@@ -17,7 +17,6 @@ extern void load_tss(unsigned short tss_descriptor);
 extern void set_current_esp0(void);
 extern void print_esp(void);
 
-
 extern char read_port(unsigned short port);
 extern void write_port(unsigned short port, unsigned short data);
 
@@ -25,43 +24,40 @@ extern void disable_ints(void);
 extern void enable_ints(void);
 extern void reload_segments(void);
 
-
 extern char press_flag;
 
 extern unsigned char *get_esp(void);
 
-Task *get_task(void){
-    return &tasks[next_pid];
+Task *get_task(void) { return &tasks[next_pid]; }
+
+uint32_t gdt_get_base(GDT_Entry gdt_entry) {
+    return gdt_entry.base1 + (((uint32_t)gdt_entry.base2) << 16) +
+           (((uint32_t)gdt_entry.base3) << 24);
+}
+uint32_t gdt_get_limit(GDT_Entry gdt_entry) {
+    return (gdt_entry.limit1) +
+           (((uint32_t)(gdt_entry.limit2flags & 0b1111)) << 16);
+}
+char gdt_get_flags(GDT_Entry gdt_entry) {
+    return (gdt_entry.limit2flags & 0b11110000) >> 4;
 }
 
-uint32_t gdt_get_base(GDT_Entry gdt_entry){
-  return gdt_entry.base1 + (((uint32_t)gdt_entry.base2)<<16) + (((uint32_t)gdt_entry.base3)<<24);
-}
-uint32_t gdt_get_limit(GDT_Entry gdt_entry){
-    return (gdt_entry.limit1) + (((uint32_t)(gdt_entry.limit2flags & 0b1111))<<16);
-}
-char gdt_get_flags(GDT_Entry gdt_entry){
-    return (gdt_entry.limit2flags & 0b11110000)>>4;
-}
-
-
-void gdt_set_base(GDT_Entry *gdt_entry, uint32_t base){
+void gdt_set_base(GDT_Entry *gdt_entry, uint32_t base) {
     gdt_entry->base1 = base & 0x0000FFFF;
-    gdt_entry->base2 = ((base & 0x00FF0000) >> (8*2));
-    gdt_entry->base3 = ((base & 0xFF000000) >> (8*3));
+    gdt_entry->base2 = ((base & 0x00FF0000) >> (8 * 2));
+    gdt_entry->base3 = ((base & 0xFF000000) >> (8 * 3));
 }
-void gdt_set_limit(GDT_Entry *gdt_entry, uint32_t limit){
+void gdt_set_limit(GDT_Entry *gdt_entry, uint32_t limit) {
     gdt_entry->limit1 = limit & 0x0FFFF;
     gdt_entry->limit2flags &= 0xF0;
     gdt_entry->limit2flags |= ((limit & 0xF0000) >> (16));
 }
-void gdt_set_flags(GDT_Entry *gdt_entry, uint32_t flags){
+void gdt_set_flags(GDT_Entry *gdt_entry, uint32_t flags) {
     gdt_entry->limit2flags &= 0x0F;
-    gdt_entry->limit2flags |= (flags<<4);
+    gdt_entry->limit2flags |= (flags << 4);
 }
 
-
-void gdt_init(uint32_t esp0){
+void gdt_init(uint32_t esp0) {
     uint32_t gdt_ptr[2];
     kasserteq(sizeof(GDT_Entry), 8, "Size of GDT Entry");
     disable_ints();
@@ -85,7 +81,6 @@ void gdt_init(uint32_t esp0){
     GDT[3].access = 0xFA;
     gdt_set_flags(&GDT[3], 0xC);
 
-
     gdt_set_base(&GDT[4], 0);
     gdt_set_limit(&GDT[4], 0xFFFFF);
     GDT[4].access = 0xF2;
@@ -102,8 +97,8 @@ void gdt_init(uint32_t esp0){
     GDT[5].access = 0x89;
     gdt_set_flags(&GDT[5], 0x0);
 
-    unsigned long gdt_addr = (unsigned long) GDT;
-    gdt_ptr[0] = (sizeof(GDT_Entry) * GDT_SIZE) + ((gdt_addr & 0xFFFF) << 16); 
+    unsigned long gdt_addr = (unsigned long)GDT;
+    gdt_ptr[0] = (sizeof(GDT_Entry) * GDT_SIZE) + ((gdt_addr & 0xFFFF) << 16);
     gdt_ptr[1] = gdt_addr >> 16;
 
     load_gdt(gdt_ptr);

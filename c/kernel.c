@@ -2,11 +2,11 @@
 
 #define IDT_SIZE 256
 
-#include "string.h"
-#include "stdlib.h"
-#include "kio.h"
 #include "display.h"
+#include "kio.h"
 #include "ksh.h"
+#include "stdlib.h"
+#include "string.h"
 #include "task.h"
 extern void keyboard_handler(void);
 extern void out_handler(void);
@@ -28,13 +28,11 @@ extern void test_user_function_fail(void);
 extern void print_esp(void);
 extern uint32_t get_esp(void);
 extern ProtectedTSS tss;
-void test_user_function_success(void){
-  println("Hello!!");
-}
+void test_user_function_success(void) { println("Hello!!"); }
 char local_press_flag;
 
 /* IDT/interrupt functions */
-struct IDT_entry{
+struct IDT_entry {
     unsigned short int offset_low;
     unsigned short int selector;
     unsigned char zero;
@@ -43,21 +41,20 @@ struct IDT_entry{
 };
 struct IDT_entry IDT[IDT_SIZE];
 
-
-
-void error_handler_main(uint32_t ercode){
-  write_port(0x20,0x20);
-  println("Exception!");
-  print("ercode: ");
-  println_int(ercode);
-  while(1);
-  //char temp = press_flag;
-  //while(temp == press_flag){} // TODO: Move to IO, make it work
-  return;
+void error_handler_main(uint32_t ercode) {
+    write_port(0x20, 0x20);
+    println("Exception!");
+    print("ercode: ");
+    println_int(ercode);
+    while (1)
+        ;
+    // char temp = press_flag;
+    // while(temp == press_flag){} // TODO: Move to IO, make it work
+    return;
 }
 
-
-void add_idt_entry(unsigned long handler_addr, int entry_num, unsigned short int selector, unsigned char attr){
+void add_idt_entry(unsigned long handler_addr, int entry_num,
+                   unsigned short int selector, unsigned char attr) {
     IDT[entry_num].offset_low = handler_addr & 0xFFFF;
     IDT[entry_num].selector = selector;
     IDT[entry_num].zero = 0;
@@ -65,14 +62,14 @@ void add_idt_entry(unsigned long handler_addr, int entry_num, unsigned short int
     IDT[entry_num].offset_high = (handler_addr & 0xFFFF0000) >> 16;
 }
 
-void idt_init(void){
+void idt_init(void) {
     unsigned long keyboard_addr, out_addr;
     unsigned long idt_addr;
     unsigned long idt_ptr[2];
     disable_ints();
-    for(int i = 0; i < 32; i++){
-      // STUPID HACK ALERT !!!!!
-      add_idt_entry((unsigned long)(error_handler + 4*i), i, 0x08, 0x8F);
+    for (int i = 0; i < 32; i++) {
+        // STUPID HACK ALERT !!!!!
+        add_idt_entry((unsigned long)(error_handler + 4 * i), i, 0x08, 0x8F);
     }
     add_idt_entry((unsigned long)keyboard_handler, 0x21, 0x08, 0x8e);
     add_idt_entry((unsigned long)out_handler, 0x80, 0x08, 0x8e);
@@ -81,52 +78,46 @@ void idt_init(void){
      *	         PIC1	PIC2
      *Command    0x20	0xA0
      *Data	 0x21	0xA1 */
-	
+
     write_port(0x20, 0x11);
     write_port(0xA0, 0x11);
 
-    write_port (0x21, 0x20);
-    write_port (0xA1, 0x28);
+    write_port(0x21, 0x20);
+    write_port(0xA1, 0x28);
 
-    write_port (0x21, 0x00);
-    write_port (0xA1, 0x00);
+    write_port(0x21, 0x00);
+    write_port(0xA1, 0x00);
 
-    write_port (0x21, 0x01);
-    write_port (0xA1, 0x01);
+    write_port(0x21, 0x01);
+    write_port(0xA1, 0x01);
 
+    write_port(0x21, 0xFF);
+    write_port(0xA1, 0xFF);  // Turn PIC off
 
-    write_port (0x21, 0xFF);
-    write_port (0xA1, 0xFF); // Turn PIC off
-
-    idt_addr = (unsigned long) IDT;
-    idt_ptr[0] = (sizeof(struct IDT_entry) * IDT_SIZE) + ((idt_addr & 0xFFFF) << 16);
+    idt_addr = (unsigned long)IDT;
+    idt_ptr[0] =
+        (sizeof(struct IDT_entry) * IDT_SIZE) + ((idt_addr & 0xFFFF) << 16);
     idt_ptr[1] = idt_addr >> 16;
 
     load_idt(idt_ptr);
     enable_ints();
 }
 
+void handle_io() {
+    char c = readch(stdin);
 
-void handle_io(){
-   char c = readch(stdin);
-   
-   if(c == 0)
-      return;
-   if(c <= 0)
-      return;
-   if(c == '\n'){
-      print_nl();
-      return;
-   }
-   if(c == '\b'){
-      backspace();
-      return;
-   }
-   kputc(c);
+    if (c == 0) return;
+    if (c <= 0) return;
+    if (c == '\n') {
+        print_nl();
+        return;
+    }
+    if (c == '\b') {
+        backspace();
+        return;
+    }
+    kputc(c);
 }
-
-
-
 
 void kmain(void) {
     const char *str = "popcorn colonel V1.0.0\0";
@@ -145,10 +136,11 @@ void kmain(void) {
 
     print(str);
     print_nl();
-    kasserteq(esp0, tss.ESP0, "TSS esp0 and real esp0 do not match for leaving kernel mode");
+    kasserteq(esp0, tss.ESP0,
+              "TSS esp0 and real esp0 do not match for leaving kernel mode");
     jump_usermode(test_user_function_success);
     sh();
-    //while(1){}
+    // while(1){}
     /* while(1){ */
     /* 	if(press_flag != local_press_flag){ */
     /* 	    handle_io(); */

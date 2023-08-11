@@ -5,7 +5,6 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
-
 /* display functions */
 void clear(void);
 void kputc(char c);
