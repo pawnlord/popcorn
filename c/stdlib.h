@@ -26,7 +26,7 @@ typedef struct ProcessState {
 
 #define META_SZ sizeof(block_info_t)
 
-#define EMPTY_TABLE 0x00000002
+#define EMPTY_TABLE 0x00000006
 
 unsigned char *sbrk(size_t sz);
 

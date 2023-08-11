@@ -6,6 +6,9 @@
 extern char read_port(unsigned short port);
 extern void write_port(unsigned short port, unsigned short data);
 
+extern void disable_ints(void);
+extern void enable_ints(void);
+
 char press_flag = 0;  // alternates between 0 and 1 as keyboard is pressed
 char echo_flag = 1;
 IOStream *stdin;

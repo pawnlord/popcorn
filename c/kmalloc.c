@@ -81,8 +81,7 @@ unsigned char *sbrk(size_t sz) {
         process_state->brk_ptr += sz;
         if ((uint32_t)process_state->brk_ptr > process_state->allocated) {
             uint32_t first_entry =
-                ((uint32_t)process_state->brk_ptr & (0x3FF << 22)) >>
-                22;  // should be the index into the page_directory
+                ((uint32_t)process_state->brk_ptr & (0x3FF << 22)) >> 22;  // should be the index into the page_directory
             while (process_state->page_dir[first_entry] != EMPTY_TABLE) {
                 first_entry++;
                 process_state->allocated += 1024 * 4096;

@@ -67,17 +67,22 @@ void get_level(int size, int *level, int *min_level, int *min_blocks) {
 
 int request_page(size_t size, uint32_t page_table[], int idx) {
     int level = 0;
-    int min_level = 0;   // level we change on. at most level
-    int min_blocks = 1;  // number of blocks used on min_level, at least one
+
+    // level we change on. at most level
+    int min_level = 0;   
+    // number of blocks used on min_level, at least one
+    int min_blocks = 1;  
 
     get_level(size, &level, &min_level, &min_blocks);
 
     size_t offset = BUDDY_LEVEL(level);
     size_t buddy_size = BUDDY_SIZE(level);
+    
     // Search
     char in_use = 1, bit = -1;
-    uint32_t byte =
-        (1024 / 8) / (1 << level);  // first byte that can be allocated
+    
+    // first byte that can be allocated
+    uint32_t byte = (1024 / 8) / (1 << level);  
     while (in_use && byte < (uint32_t)buddy_size) {
         bit++;
         byte += (bit % 8 || bit == 0) ? 0 : 1;
@@ -89,7 +94,7 @@ int request_page(size_t size, uint32_t page_table[], int idx) {
     }
 
     uint32_t blocks = (1 << min_level) * min_blocks;
-    uint32_t raddr = (byte * 8 + bit) * (1 << level) * 0x1000;
+    uint32_t raddr = (byte * 8 + bit) * (1 << level) * 0x1000 | 0b111;
     // assignment to page
     for (uint32_t i = 0; i < blocks; i++) {
         page_table[idx + i] = raddr;

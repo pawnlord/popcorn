@@ -10,6 +10,6 @@ error_handler += "\tpop edi\n"
 error_handler += "\tpushad\n"
 error_handler += "\tcall error_handler_main\n"
 
-with open("asm/interrupt.s.in") as infile:
+with open("asm/interrupt.in.s") as infile:
     with open("asm/interrupt.s", "w") as outfile:
         outfile.write(infile.read().format(error_handler))
