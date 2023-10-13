@@ -13,7 +13,7 @@
 out_handler:
 	pushad
 	call handle_stdout
-	popad
+    popad
 	iretd
 
 keyboard_handler:

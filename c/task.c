@@ -17,6 +17,8 @@ extern void load_tss(unsigned short tss_descriptor);
 extern void set_current_esp0(void);
 extern void print_esp(void);
 
+extern unsigned char *get_kernel_start(void);
+
 extern char read_port(unsigned short port);
 extern void write_port(unsigned short port, unsigned short data);
 

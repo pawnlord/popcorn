@@ -8,6 +8,8 @@ for i in range(32):
 error_handler += "e:\n"
 error_handler += "\tpop edi\n"
 error_handler += "\tpushad\n"
+# Technically unnecessary, edi is the last register pushed by pushad anyway
+error_handler += "\tpush edi\n"
 error_handler += "\tcall error_handler_main\n"
 
 with open("asm/interrupt.in.s") as infile:

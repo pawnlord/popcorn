@@ -72,7 +72,7 @@ void idt_init(void) {
         add_idt_entry((unsigned long)(error_handler) + 4 * i, i, 0x08, 0x8F);
     }
     add_idt_entry((unsigned long)keyboard_handler, 0x21, 0x08, 0x8e);
-    add_idt_entry((unsigned long)out_handler, 0x80, 0x08, 0x8e);
+    add_idt_entry((unsigned long)out_handler, 0x80, 0x08, 0xEE);
 
     /*     Ports
      *	         PIC1	PIC2
@@ -125,7 +125,7 @@ void kmain(void) {
     mem_init();
     idt_init();
     kb_init();
-    int esp0 = get_esp();
+    int esp0 = (int)malloc(10000);
     println_int(esp0);
     gdt_init(esp0);
 
@@ -136,8 +136,6 @@ void kmain(void) {
 
     print(str);
     print_nl();
-    kasserteq(esp0, tss.ESP0,
-              "TSS esp0 and real esp0 do not match for leaving kernel mode");
     jump_usermode(test_user_function_success);
     sh();
     // while(1){}

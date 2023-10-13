@@ -13,7 +13,7 @@
 out_handler:
 	pushad
 	call handle_stdout
-	popad
+    popad
 	iretd
 
 keyboard_handler:
@@ -122,5 +122,6 @@ jmp e
 e:
 	pop edi
 	pushad
+	push edi
 	call error_handler_main
 

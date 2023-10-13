@@ -142,7 +142,8 @@ void idpage(uint32_t addr, uint32_t size, uint32_t page_dir[]) {
         page_dir[first_entry] = (uint32_t)get_next_page_table();
     }
     size = size / 0x1000;
-    if (size > 1024) size = 1024;
+    if (size > 1024) 
+    size = 1024;
     addr = addr & (~0xFFF);
     uint32_t *page_table = (uint32_t *)page_dir[first_entry];
     for (uint32_t i = 0; i < size; i++) {
@@ -215,7 +216,7 @@ void mem_init() {
     idpage(1024 * 0x1000 * 2, 1024 * 0x1000, kernel_page_dir);
 
     // Maps kernel to 0xC0000000
-    map_page_tables(kernel_page_dir, 0xC0000000, (uint32_t)get_kernel_start(),
+    map_page_tables(kernel_page_dir, KERNEL_START_ADDR, (uint32_t)get_kernel_start(),
                     0x400000);
     kasserteq(((uint32_t *)kernel_page_dir[768])[0],
               (uint32_t)get_kernel_start() | 0b111, "kernel page map failed");

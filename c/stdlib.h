@@ -4,7 +4,7 @@
    Various functions for memory management
 */
 
-typedef int size_t;
+typedef unsigned int size_t;
 typedef unsigned long uint32_t;
 typedef unsigned char uint8_t;
 
@@ -27,6 +27,8 @@ typedef struct ProcessState {
 #define META_SZ sizeof(block_info_t)
 
 #define EMPTY_TABLE 0x00000006
+
+#define KERNEL_START_ADDR 0xC0000000
 
 unsigned char *sbrk(size_t sz);
 
