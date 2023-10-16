@@ -37,8 +37,17 @@ void shiftup(int lines) {
 }
 
 void kputc(char c) {
+    static int is_in_escape = 0;
     writech(stdout, c);
-    handle_stdout();
+    if(c == '\x1b'){
+        is_in_escape = 1;
+    }
+    if(c == 'm' || c == '\n'){
+        is_in_escape = 0;
+    }
+    if(!is_in_escape){
+        handle_stdout();
+    }
 }
 
 void print(const char *str) {
@@ -96,6 +105,19 @@ void itos(int num, char *str, int size) {
     }
 }
 
+
+int stoi(char *str, int size) {
+    int count = 0;
+    int num = 0;
+    for(int i = 0; i < size; i++){
+        int mult = 1;
+        for(int j = 0; j < size - i - 1; j++){
+            mult *= 10;
+        }
+        num += (str[i] - 0x30) * mult;
+    }
+    return num;
+}
 void backspace(void) {
     curr = curr - 2;
     vidptr[curr] = '\0';
@@ -117,6 +139,32 @@ void handle_stdout(void) {
         }
         if (curr + 2 > LINES * CLMN_IN_LN * BYTES_PER_ELM) {
             shiftup(1);
+        }
+        if(c == '\x1b' && readch(stdout) == '[') {
+            char *code = (char*)malloc(10);
+            int i = 0;
+            while((c = readch(stdout)) && c != 'm' && i < 10){
+                code[i] = c;
+                i++;
+            }
+            if(i >= 2){
+                int num = stoi(code, 2);
+                int newX, newY;
+                switch (num)
+                {
+                case 0:
+                    clear();
+                    break;
+                case 1:
+                    newX = stoi(code+2, 2);
+                    newY = stoi(code+4, 2);
+                    curr = (CLMN_IN_LN * BYTES_PER_ELM) * newY + (newX * BYTES_PER_ELM);
+                    break;
+                default:
+                    break;
+                }
+            }
+            continue;
         }
 
         vidptr[curr++] = c;

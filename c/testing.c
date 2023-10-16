@@ -1,5 +1,6 @@
 #include "display.h"
 #include "stdlib.h"
+#include "kstdlib.h"
 extern char press_flag;
 
 void kasserteq(uint32_t val1, uint32_t val2, const char* msg) {

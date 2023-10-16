@@ -1,8 +1,11 @@
+#ifndef BUDDY_H
+#define BUDDY_H
 /*
   buddy allocation system, used to remember what real addresses we have
   available
  */
 #include "stdlib.h"
+#include "kstdlib.h"
 
 // one less than actual space as to not have an overflow
 // TODO: Custom amount so that we are not just assuming we have memory.
@@ -27,3 +30,4 @@ int request_page(size_t size, uint32_t page_table[], int idx);
 // frees one page when it is no longer being used
 // returns 1 on success, 0 on failure
 int free_page(size_t size, uint32_t page_table[], int idx);
+#endif

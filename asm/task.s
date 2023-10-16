@@ -7,7 +7,7 @@ global jump_usermode
 global test_user_function_fail
 global set_current_esp0
 global print_esp
-extern current_task
+extern active_task
 extern tss
 extern println_int
 extern test_user_function_success
@@ -37,13 +37,13 @@ switch_task:
     push edi
     push ebp
 
-    mov edi,[current_task]    ;edi = address of the previous task's "thread control block"
+    mov edi,[active_task]    ;edi = address of the previous task's "thread control block"
     mov [edi+Task.ESP],esp         ;Save ESP for previous task's kernel stack in the thread's TCB
 
     ;Load next task's state
 
     mov esi,[esp+(4+1)*4]         ;esi = address of the next task's "thread control block" (parameter passed on stack)
-    mov [current_task],esi    ;Current task's TCB is the next task TCB
+    mov [active_task],esi    ;Current task's TCB is the next task TCB
 
     mov esp,[esi+Task.ESP]         ;Load ESP for next task's kernel stack from the thread's TCB
     mov eax,[esi+Task.page_dir]         ;eax = address of page directory for next task

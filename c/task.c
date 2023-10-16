@@ -6,14 +6,21 @@
 int next_pid = 1;
 int current_gdt_entry = 6;
 ProtectedTSS tss;  // TSS for first CPU
-Task tasks[MAX_TASKS];
-Task *kernel_task = &tasks[0];
-Task *current_task;
+ProcessState tasks[MAX_TASKS];
+ProcessState *kernel_task = &tasks[0];
+
+ProcessState *active_task;
+
+uint8_t available_pids[MAX_TASKS];
+uint8_t pids_start_idx;
+uint8_t pids_end_idx;
+
 struct GDT_Entry GDT[GDT_SIZE];
 
 extern void load_idt(unsigned long *idt_ptr);
 extern void load_gdt(unsigned long *gdt_ptr);
 extern void load_tss(unsigned short tss_descriptor);
+extern void load_page_directory(unsigned int *);
 extern void set_current_esp0(void);
 extern void print_esp(void);
 
@@ -30,7 +37,56 @@ extern char press_flag;
 
 extern unsigned char *get_esp(void);
 
-Task *get_task(void) { return &tasks[next_pid]; }
+void init_task_manager(void) {
+    pids_start_idx = 0;
+    pids_end_idx = MAX_TASKS;
+    for(int i = 0; i < MAX_TASKS; i++){
+        available_pids[i] = i;
+    }
+    kernel_task->prev = kernel_task;
+    kernel_task->next = kernel_task;
+}
+
+
+void remove_task(uint8_t pid){
+
+    pids_end_idx = (pids_end_idx + 1) % MAX_TASKS;
+    available_pids[pids_end_idx] = pid; 
+}
+
+ProcessState *create_new_task(uint8_t parent_id){
+    PageDirectory *dir = get_next_page_dir_ptr();
+    idpage(0x0, 1024 * 0x1000, *dir);
+    idpage(1024 * 0x1000, 1024 * 0x1000, *dir);
+    idpage(1024 * 0x1000 * 2, 1024 * 0x1000, *dir);
+
+    map_page_tables(*dir, KERNEL_START_ADDR, (uint32_t)get_kernel_start(), 0x400000);
+    uint8_t pid = available_pids[pids_start_idx++];
+
+    ProcessState *state = (ProcessState *)malloc(sizeof(ProcessState));
+    state->processID = pid;
+    state->parentID = parent_id;
+    state->brk_ptr = (unsigned char*)0x100000;
+    state->allocated = 0xFFFFF;
+    // Don't start running until actually scheduled
+    state->state = TASK_STOPPED;
+}
+
+void schedule_task(ProcessState *task){
+    task->next = kernel_task;
+    task->prev = kernel_task->prev;
+    kernel_task->prev = task;
+    task->state = TASK_RUNNING;
+}
+
+
+void handle_task_switch(void){
+    ProcessState *next_task = active_task->next;
+    load_page_directory((unsigned int *)next_task->page_dir);   
+}
+
+
+ProcessState *get_task(void) { return active_task; }
 
 uint32_t gdt_get_base(GDT_Entry gdt_entry) {
     return gdt_entry.base1 + (((uint32_t)gdt_entry.base2) << 16) +
@@ -57,6 +113,11 @@ void gdt_set_limit(GDT_Entry *gdt_entry, uint32_t limit) {
 void gdt_set_flags(GDT_Entry *gdt_entry, uint32_t flags) {
     gdt_entry->limit2flags &= 0x0F;
     gdt_entry->limit2flags |= (flags << 4);
+}
+
+void register_task(void (*fp)()){
+    uint32_t num;
+
 }
 
 void gdt_init(uint32_t esp0) {

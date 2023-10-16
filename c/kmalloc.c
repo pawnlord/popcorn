@@ -5,6 +5,7 @@
 #include "display.h"
 #include "stdlib.h"
 #include "string.h"
+#include "kstdlib.h"
 
 extern unsigned char *get_heap_space(void);
 extern unsigned char *get_stack_space(void);
@@ -13,21 +14,44 @@ extern unsigned char *get_kernel_start(void);
 extern void load_page_directory(unsigned int *);
 extern void enable_paging();
 
-typedef uint32_t PageTable[1024];
 
 // Paging definitions
 
 uint32_t kernel_page_dir[1024] __attribute__((aligned(4096)));
 
+uint32_t page_dirs[1024][1024] __attribute__((aligned(4096)));
+
+uint32_t allocated_dirs[32];
+
 // all page tables we will ever need
 uint32_t page_tables[1024][1024] __attribute__((aligned(4096)));
+
 PageTable *next_page_table =
     (PageTable *)&page_tables;  // pointer to next page table in the above array
 
-PageTable *get_next_page_table() { return next_page_table++; }
+PageTable *get_next_page_table_ptr() { return next_page_table++; }
 
-ProcessState kernel_state = {1, 0, kernel_page_dir, 0x0, 0x0};
+PageDirectory *get_next_page_dir_ptr() {
+    int dir = 0;
+    for(int i = 0; i < 32; i++){
+        if((allocated_dirs[i]^0) != 0) { // => allocated_dirs[i] != 0xFF..FF
+            dir += i * 32;
+            int rel_dir = 0;
+            int dir_flags = allocated_dirs[i];
+            while(dir_flags & 1){
+                rel_dir += 1;
+                dir_flags >>= 1;
+            }
+            allocated_dirs[i] |= (1 << rel_dir);
+            break;
+        }
+    }
+    return &page_dirs[dir];
+}
 
+
+
+ProcessState kernel_state = {1, 0, &kernel_page_dir, 0x0, 0x0, 0x0, 0x0, TASK_KERNEL};
 ProcessState *process_state = &kernel_state;
 
 BlockInfo *block_start;
@@ -71,7 +95,8 @@ void map_page_tables(uint32_t page_dir[], uint32_t vaddr, uint32_t raddr,
     }
 }
 
-unsigned char *sbrk(size_t sz) {
+
+unsigned char *ksbrk(size_t sz, ProcessState *process_state) {
     if (!paging_enabled) {
         unsigned char *ptr = process_state->brk_ptr;
         process_state->brk_ptr += sz;
@@ -82,20 +107,27 @@ unsigned char *sbrk(size_t sz) {
         if ((uint32_t)process_state->brk_ptr > process_state->allocated) {
             uint32_t first_entry =
                 ((uint32_t)process_state->brk_ptr & (0x3FF << 22)) >> 22;  // should be the index into the page_directory
-            while (process_state->page_dir[first_entry] != EMPTY_TABLE) {
+            while ((*process_state->page_dir)[first_entry] != EMPTY_TABLE) {
                 first_entry++;
                 process_state->allocated += 1024 * 4096;
                 process_state->brk_ptr += 1024 * 4096;
             }
-            PageTable *table = get_next_page_table();
+            PageTable *table = get_next_page_table_ptr();
             request_page(1024, *table, 0);
-            process_state->page_dir[first_entry] = (uint32_t)table;
+            (*process_state->page_dir)[first_entry] = (uint32_t)table;
             process_state->allocated += 1024 * 4096;
         }
         return ptr;
     }
 }
 
+// uint32_t vaddr_to_raddr(uint32_t vaddr, ProcessState *process_state) {
+//     return (*process_state->page_dir)[vaddr >> (32-10)][(vaddr >> (32-20)) & 0x3FF] & ~(0b111);
+// }
+
+unsigned char *sbrk(size_t sz) {
+    return ksbrk(sz, process_state);
+}
 // sbrk with alignment
 unsigned char *align_sbrk(size_t sz, int align) {
     if (!paging_enabled) {
@@ -139,11 +171,13 @@ void sbrk_test() {
 void idpage(uint32_t addr, uint32_t size, uint32_t page_dir[]) {
     uint32_t first_entry = (addr & (0x3FF << 22)) >> 22;
     if (page_dir[first_entry] == EMPTY_TABLE) {
-        page_dir[first_entry] = (uint32_t)get_next_page_table();
+        page_dir[first_entry] = (uint32_t)get_next_page_table_ptr();
     }
     size = size / 0x1000;
-    if (size > 1024) 
-    size = 1024;
+    // only allow one page table worth
+    if (size > 1024) {
+        size = 1024;
+    }
     addr = addr & (~0xFFF);
     uint32_t *page_table = (uint32_t *)page_dir[first_entry];
     for (uint32_t i = 0; i < size; i++) {
@@ -234,6 +268,7 @@ void mem_init() {
     current_block->allocated = 0;
     test_malloc();
 }
+
 
 /*
   general memory allocation

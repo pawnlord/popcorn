@@ -20,17 +20,28 @@ void test_io_stream(void) {
     kasserteq(stdin->idx_start, 0, "writech check 2");
     kasserteq(stdin->idx_end, 1, "writech check 3");
 
+    writech(stdin, 'e');
+    kasserteq(stdin->buf[2], 'e', "writech check 1");
+    kasserteq(stdin->idx_start, 0, "writech check 2");
+    kasserteq(stdin->idx_end, 2, "writech check 3");
     char ch = readch(stdin);
 
     kasserteq(ch, 'h', "readch check 1");
     kasserteq(stdin->idx_start, 1, "readch check 2");
-    kasserteq(stdin->idx_end, 1, "readch check 3");
+    kasserteq(stdin->idx_end, 2, "readch check 3");
 
     ch = readch(stdin);
 
-    kasserteq(ch, 0, "readch check 4");
-    kasserteq(stdin->idx_start, 1, "readch check 5");
-    kasserteq(stdin->idx_end, 1, "readch check 6");
+    kasserteq(ch, 'e', "readch check 4");
+    kasserteq(stdin->idx_start, 2, "readch check 5");
+    kasserteq(stdin->idx_end, 2, "readch check 6");
+
+
+    ch = readch(stdin);
+
+    kasserteq(ch, 0, "readch check 7");
+    kasserteq(stdin->idx_start, 2, "readch check 8");
+    kasserteq(stdin->idx_end, 2, "readch check 9");
 }
 
 /* keyboard functions */

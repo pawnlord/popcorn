@@ -3,6 +3,7 @@
 #include "display.h"
 #include "kio.h"
 #include "stdlib.h"
+#include "kstdlib.h"
 
 /*
   Primary interface for kernel. Should  shoot off other processes
@@ -15,4 +16,9 @@ void sh() {
         get_line(buf, 250);
         println(buf);
     }
+}
+
+
+void time(){
+    static int counter = 0;
 }

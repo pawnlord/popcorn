@@ -5,6 +5,7 @@
 #include "display.h"
 #include "kio.h"
 #include "ksh.h"
+#include "kstdlib.h"
 #include "stdlib.h"
 #include "string.h"
 #include "task.h"
@@ -126,16 +127,18 @@ void kmain(void) {
     idt_init();
     kb_init();
     int esp0 = (int)malloc(10000);
-    println_int(esp0);
+    // println_int(esp0);
     gdt_init(esp0);
 
     local_press_flag = press_flag;
-    print_esp();
+    // print_esp();
 
     // End init
+    const char *str2 = "\x1b[011000mHello! V1.0.0\0";
 
-    print(str);
-    print_nl();
+    // print(str);
+    // print_nl();
+    print(str2);
     jump_usermode(test_user_function_success);
     sh();
     // while(1){}

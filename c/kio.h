@@ -5,6 +5,7 @@
 #define BACKSPACE 0x0E
 
 #include "display.h"
+#include "kstdlib.h"
 
 typedef struct IOStream {
     int sz;

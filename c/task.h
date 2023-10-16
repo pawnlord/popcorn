@@ -7,6 +7,7 @@
 
 #include "stdlib.h"
 #include "string.h"
+#include "kstdlib.h"
 
 typedef struct GDT_Entry {
     unsigned short limit1;
@@ -73,19 +74,10 @@ typedef struct PushedRegs {
     uint32_t eflags;
 } PushedRegs;
 
-typedef enum TaskState { TASK_STOPPED, TASK_RUNNING } TaskState;
-typedef struct Task {
-    uint32_t num;
-    uint32_t pid;
-    uint32_t *page_dir;
-    uint32_t ESP;   // esp for task
-    uint32_t ESP0;  // esp for privilege escalation
-    TaskState state;
-    struct Task *next_task;
-} Task;
+
 
 void init_multitasking();
-void init_task(Task *task);
+void init_task(ProcessState *task);
 
 uint32_t gdt_get_base(GDT_Entry gdt_entry);
 uint32_t gdt_get_limit(GDT_Entry gdt_entry);
@@ -97,4 +89,4 @@ void gdt_set_flags(GDT_Entry *gdt_entry, uint32_t flags);
 
 void gdt_init(uint32_t esp0);
 
-Task *get_task(void);
+ProcessState *get_task(void);
