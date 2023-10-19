@@ -70,10 +70,12 @@ ProcessState *create_new_task(uint8_t parent_id){
     state->parentID = parent_id;
     state->brk_ptr = (unsigned char*)0x100000;
     state->allocated = 0xFFFFF;
+    state->esp = (uint32_t)kmalloc(100000, state);
     state->esp0 = (uint32_t)kmalloc(100000, state);
     state->curr = 0;
     // Don't start running until actually scheduled
     state->state = TASK_STOPPED;
+    return state;
 }
 
 void schedule_task(ProcessState *task){

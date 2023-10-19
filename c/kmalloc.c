@@ -244,10 +244,6 @@ void mem_init() {
     kasserteq(((uint32_t *)(kernel_page_dir[1] & ~0b111))[0],
               1024 * 0x1000 | 0b111, "kernel page 1 not identity paged");
     idpage(1024 * 0x1000 * 2, 1024 * 0x1000, kernel_page_dir);
-    idpage(1024 * 0x1000 * 3, 1024 * 0x1000, kernel_page_dir);
-    idpage(1024 * 0x1000 * 4, 1024 * 0x1000, kernel_page_dir);
-    idpage(1024 * 0x1000 * 5, 1024 * 0x1000, kernel_page_dir);
-    idpage(1024 * 0x1000 * 6, 1024 * 0x1000, kernel_page_dir);
 
     // Maps kernel to 0xC0000000
     map_page_tables(kernel_page_dir, KERNEL_START_ADDR, (uint32_t)get_kernel_start(),

@@ -39,14 +39,14 @@ switch_task:
     push ebp
 
     mov edi,[active_task]    ;edi = address of the previous task's "thread control block"
-    mov [edi+Task.ESP0],esp         ;Save ESP for previous task's kernel stack in the thread's TCB
+    mov [edi+Task.ESP],esp         ;Save ESP for previous task's kernel stack in the thread's TCB
 
     ;Load next task's state
 
-    mov esi,[esp+Task.next]         ;esi = address of the next task's "thread control block" (parameter passed on stack)
+    mov esi,[edi+Task.next]         ;esi = address of the next task's "thread control block" (parameter passed on stack)
     mov [active_task],esi    ;Current task's TCB is the next task TCB
 
-    mov esp,[esi+Task.ESP0]         ;Load ESP for next task's kernel stack from the thread's TCB
+    mov esp,[esi+Task.ESP]         ;Load ESP for next task's kernel stack from the thread's TCB
     mov eax,[esi+Task.page_dir]         ;eax = address of page directory for next task
     mov ebx,[esi+Task.ESP0]        ;ebx = address for the top of the next task's kernel stack
     mov edx, tss
@@ -100,6 +100,8 @@ section .bss
     struc Task
     .processID resb 1;
     .parentID resb 1;
+    .e1 resb 1;
+    .e2 resb 1;
     .page_dir resd 1;
     .brk_ptr resd 1;
     .allocated resd 1;
@@ -107,6 +109,9 @@ section .bss
     .ESP resd 1;
     .ESP0 resd 1;
     .state resb 1;
+    .e3 resb 1;
+    .e4 resb 1;
+    .e5 resb 1;
     .curr resd 1;
     .startBlock resd 1;  
     .currentBlock resd 1;  

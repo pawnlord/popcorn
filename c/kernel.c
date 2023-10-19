@@ -142,8 +142,8 @@ void kmain(void) {
     // print_nl();
     schedule_task(create_new_task(0));
     print(str2);
-    jump_usermode(test_user_function_success);
     handle_task_switch();
+    jump_usermode(test_user_function_success);
     sh();
     // while(1){}
     /* while(1){ */
