@@ -3,7 +3,6 @@
 #include "kio.h"
 #include "stdlib.h"
 
-unsigned int curr = 0;
 char *vidptr = (char *)0xb8000;
 extern IOStream *stdout;
 extern void display_int(void);
@@ -17,7 +16,7 @@ void clear(void) {
         vidptr[j + 1] = 0x07;
         j = j + 2;
     }
-    curr = 0;
+    get_task()->curr = 0;
 }
 
 void shiftup(int lines) {
@@ -33,7 +32,7 @@ void shiftup(int lines) {
         vidptr[j + 1] = 0x0;
         j = j + 2;
     }
-    curr -= offset;
+    get_task()->curr -= offset;
 }
 
 void kputc(char c) {
@@ -75,7 +74,7 @@ void print_int(int num) {
         char dig = (num % 10) + '0';
         str[count] = dig;
         num = num / 10;
-    };
+    }
     print(str);
     free(str);
 }
@@ -119,9 +118,9 @@ int stoi(char *str, int size) {
     return num;
 }
 void backspace(void) {
-    curr = curr - 2;
-    vidptr[curr] = '\0';
-    vidptr[curr + 1] = 0;
+    get_task()->curr = get_task()->curr - 2;
+    vidptr[get_task()->curr] = '\0';
+    vidptr[get_task()->curr + 1] = 0;
 }
 
 void handle_stdout(void) {
@@ -131,13 +130,13 @@ void handle_stdout(void) {
     static unsigned int line_size = BYTES_PER_ELM * CLMN_IN_LN;
     while ((c = readch(stdout))) {
         if (c == '\n') {
-            curr = curr + (line_size - curr % (line_size));
-            if (curr > LINES * CLMN_IN_LN * BYTES_PER_ELM) {
+            get_task()->curr = get_task()->curr + (line_size - get_task()->curr % (line_size));
+            if (get_task()->curr > LINES * CLMN_IN_LN * BYTES_PER_ELM) {
                 shiftup(1);
             }
             continue;
         }
-        if (curr + 2 > LINES * CLMN_IN_LN * BYTES_PER_ELM) {
+        if (get_task()->curr + 2 > LINES * CLMN_IN_LN * BYTES_PER_ELM) {
             shiftup(1);
         }
         if(c == '\x1b' && readch(stdout) == '[') {
@@ -158,7 +157,7 @@ void handle_stdout(void) {
                 case 1:
                     newX = stoi(code+2, 2);
                     newY = stoi(code+4, 2);
-                    curr = (CLMN_IN_LN * BYTES_PER_ELM) * newY + (newX * BYTES_PER_ELM);
+                    get_task()->curr = (CLMN_IN_LN * BYTES_PER_ELM) * newY + (newX * BYTES_PER_ELM);
                     break;
                 default:
                     break;
@@ -167,7 +166,7 @@ void handle_stdout(void) {
             continue;
         }
 
-        vidptr[curr++] = c;
-        vidptr[curr++] = 0x07;
+        vidptr[get_task()->curr++] = c;
+        vidptr[get_task()->curr++] = 0x07;
     }
 }

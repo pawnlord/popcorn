@@ -16,10 +16,10 @@
 #define MAX_BUDDIES 21
 #define RMVD_BUDS MAX_BUDDIES - BUDDIES
 // number of bytes used total
-#define BUDDIES_SIZE 0x40000 - ((1 << BUDDIES) / 8)
 
-#define BUDDY_LEVEL(l) 0x40000 - ((1 << (RMVD_BUDS + BUDDIES - l))) / 8
-#define BUDDY_SIZE(l) BUDDIES_SIZE / (1 << l)
+// (unsigned int)(0x40000*((1-(1.0/(1<<BUDDIES)))/(1-(1.0/2))))
+#define BUDDIES_SIZE (524280/8)
+
 
 void init_buddy_alloc();
 

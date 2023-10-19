@@ -122,6 +122,8 @@ void handle_io() {
 
 void kmain(void) {
     const char *str = "popcorn colonel V1.0.0\0";
+    init_task_manager();
+    
     clear();
     mem_init();
     idt_init();
@@ -138,8 +140,10 @@ void kmain(void) {
 
     // print(str);
     // print_nl();
+    schedule_task(create_new_task(0));
     print(str2);
     jump_usermode(test_user_function_success);
+    handle_task_switch();
     sh();
     // while(1){}
     /* while(1){ */

@@ -26,13 +26,20 @@ typedef struct ProcessState {
     uint32_t allocated;
     uint32_t return_addr;
     uint32_t esp;
+    uint32_t esp0;
     TaskState state;
+    uint32_t curr;
+    BlockInfo *block_start;
+    BlockInfo *current_block;  // last block initialized; assumed to be pointing to
+                               // valid memory
     struct ProcessState* next;  
     struct ProcessState* prev;  
 } ProcessState;
 
 
 PageDirectory *get_next_page_dir_ptr();
+
+void init_task_manager(void);
 
 void map_page_tables(uint32_t page_dir[], uint32_t vaddr, uint32_t raddr, size_t len);
 void idpage(uint32_t addr, uint32_t size, uint32_t page_dir[]);
@@ -41,6 +48,9 @@ unsigned char *ksbrk(size_t sz, ProcessState *process_state);
 // Task functions 
 ProcessState *create_new_task(uint8_t parent_id);
 void schedule_task(ProcessState *task);
+ProcessState *get_task(void);
+void handle_task_switch(void);
+void *kmalloc(size_t size, ProcessState *task);
 
 
 /*

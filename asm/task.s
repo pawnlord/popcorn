@@ -11,6 +11,7 @@ extern active_task
 extern tss
 extern println_int
 extern test_user_function_success
+extern switch_task
 global reload_segments
 reload_segments:
 	jmp 0x18:reload_cs
@@ -38,14 +39,14 @@ switch_task:
     push ebp
 
     mov edi,[active_task]    ;edi = address of the previous task's "thread control block"
-    mov [edi+Task.ESP],esp         ;Save ESP for previous task's kernel stack in the thread's TCB
+    mov [edi+Task.ESP0],esp         ;Save ESP for previous task's kernel stack in the thread's TCB
 
     ;Load next task's state
 
-    mov esi,[esp+(4+1)*4]         ;esi = address of the next task's "thread control block" (parameter passed on stack)
+    mov esi,[esp+Task.next]         ;esi = address of the next task's "thread control block" (parameter passed on stack)
     mov [active_task],esi    ;Current task's TCB is the next task TCB
 
-    mov esp,[esi+Task.ESP]         ;Load ESP for next task's kernel stack from the thread's TCB
+    mov esp,[esi+Task.ESP0]         ;Load ESP for next task's kernel stack from the thread's TCB
     mov eax,[esi+Task.page_dir]         ;eax = address of page directory for next task
     mov ebx,[esi+Task.ESP0]        ;ebx = address for the top of the next task's kernel stack
     mov edx, tss
@@ -63,8 +64,6 @@ switch_task:
     pop ebx
 
     ret
-
-
     ; credit: https://wiki.osdev.org/Getting_to_Ring_3#iret_method
 jump_usermode:
 
@@ -99,10 +98,18 @@ print_esp:
 
 section .bss
     struc Task
-        .num resd 1
-        .pid resd 1
-        .page_dir resd 1
-        .ESP resd 1
-        .ESP0 resd 1
-        .state resd 1
+    .processID resb 1;
+    .parentID resb 1;
+    .page_dir resd 1;
+    .brk_ptr resd 1;
+    .allocated resd 1;
+    .return_addr resd 1;
+    .ESP resd 1;
+    .ESP0 resd 1;
+    .state resb 1;
+    .curr resd 1;
+    .startBlock resd 1;  
+    .currentBlock resd 1;  
+    .next resd 1;  
+    .prev resd 1;  
     endstruc

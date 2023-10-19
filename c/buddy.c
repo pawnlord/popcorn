@@ -4,11 +4,21 @@
 uint8_t buddies[BUDDIES_SIZE];  // all buddies possible for full 32bit space
 
 void test_req_page();
+int buddy_level(int l){
+    if(l == 0){
+        return 0;
+    }
+    return (0x40000/(1<<l))/8 + buddy_level(l-1);
+}
+int buddy_size(int l){
+    return (0x40000/(1<<l))/8;
+}
+
 
 void init_buddy_alloc() {
     for (int i = 0; i < BUDDIES; i++) {
-        uint32_t level_start = BUDDY_LEVEL(i);
-        for (int j = 0; j < BUDDY_SIZE(i); j++) {
+        uint32_t level_start = buddy_level(i);
+        for (int j = 0; j < buddy_size(i); j++) {
             buddies[level_start + j] = 0;
         }
         // remove in use pages (id pages, as well as all kernel pages currently)
@@ -17,20 +27,20 @@ void init_buddy_alloc() {
         }
         if ((1024 / 8) / (1 << i) == 0) {
             for (int j = 0; j < (1024) / (1 << i) && j < 8; j++) {
-                buddies[level_start] |= 1 << j;
+                buddies[level_start] |= (1 << j);
             }
         }
     }
 
     kasserteq(buddies[0x0], 0xFF, "init_buddy_alloc (level 0, byte 0x0)");
     kasserteq(buddies[0x7F], 0xFF, "init_buddy_alloc (level 0, byte 0x7F)");
-    kasserteq(buddies[BUDDY_LEVEL(4) + 0x0], 0xFF,
+    kasserteq(buddies[buddy_level(4) + 0x0], 0xFF,
               "init_buddy_alloc (level 4, byte 0x0)");
-    kasserteq(buddies[BUDDY_LEVEL(4) + ((0x80) / (1 << 4) - 1)], 0xFF,
+    kasserteq(buddies[buddy_level(4) + ((0x80) / (1 << 4) - 1)], 0xFF,
               "init_buddy_alloc (level 4, byte 0x7)");
-    kasserteq(buddies[BUDDY_LEVEL(7) + 0x0], 0xFF,
+    kasserteq(buddies[buddy_level(7) + 0x0], 0xFF,
               "init_buddy_alloc (level 7, byte 0x0)");
-    kasserteq(buddies[BUDDY_LEVEL(10) + 0x0], 0x01,
+    kasserteq(buddies[buddy_level(10) + 0x0], 0x01,
               "init_buddy_alloc (level 10, byte 0x0)");
 
     test_req_page();
@@ -75,15 +85,15 @@ int request_page(size_t size, uint32_t page_table[], int idx) {
 
     get_level(size, &level, &min_level, &min_blocks);
 
-    size_t offset = BUDDY_LEVEL(level);
-    size_t buddy_size = BUDDY_SIZE(level);
+    size_t offset = buddy_level(level);
+    size_t bud_size = buddy_size(level);
     
     // Search
     char in_use = 1, bit = -1;
     
     // first byte that can be allocated
     uint32_t byte = (1024 / 8) / (1 << level);  
-    while (in_use && byte < (uint32_t)buddy_size) {
+    while (in_use && byte < (uint32_t)bud_size) {
         bit++;
         byte += (bit % 8 || bit == 0) ? 0 : 1;
         bit %= 8;
@@ -109,7 +119,7 @@ int request_page(size_t size, uint32_t page_table[], int idx) {
         int cbit = (byte * 8 + bit) >> (curr_level - level);
         int cbyte = cbit / 8;
         cbit %= 8;
-        buddies[BUDDY_LEVEL(curr_level) + cbyte] |= (1 << cbit);
+        buddies[buddy_level(curr_level) + cbyte] |= (1 << cbit);
     }
 
     // down
@@ -122,7 +132,7 @@ int request_page(size_t size, uint32_t page_table[], int idx) {
         for (int j = 0;
              j < (1 << (level - curr_level)) && (j < cblocks || cblocks == 0);
              j++) {
-            buddies[BUDDY_LEVEL(curr_level) + cbyte] |= (1 << cbit);
+            buddies[buddy_level(curr_level) + cbyte] |= (1 << cbit);
             cbit++;
             cbyte += (cbit % 8) ? 0 : 1;
             cbit %= 8;
@@ -140,7 +150,7 @@ int free_page(size_t size, uint32_t page_table[], int idx) {
 
     get_level(size, &level, &min_level, &min_blocks);
     // set pages free
-    size_t offset = BUDDY_LEVEL(level);
+    size_t offset = buddy_level(level);
 
     uint32_t blocks = (1 << min_level) * min_blocks;
     for (uint32_t i = 0; i < blocks; i++) {
@@ -159,7 +169,7 @@ int free_page(size_t size, uint32_t page_table[], int idx) {
         int cbit = (byte * 8 + bit) >> (curr_level - level);
         int cbyte = cbit / 8;
         cbit %= 8;
-        buddies[BUDDY_LEVEL(curr_level) + cbyte] &= ~(1 << cbit);
+        buddies[buddy_level(curr_level) + cbyte] &= ~(1 << cbit);
     }
 
     // down
@@ -172,7 +182,7 @@ int free_page(size_t size, uint32_t page_table[], int idx) {
         for (int j = 0;
              j < (1 << (level - curr_level)) && (j < cblocks || cblocks == 0);
              j++) {
-            buddies[BUDDY_LEVEL(curr_level) + cbyte] &= ~(1 << cbit);
+            buddies[buddy_level(curr_level) + cbyte] &= ~(1 << cbit);
             cbit++;
             cbyte += (cbit % 8) ? 0 : 1;
             cbit %= 8;
@@ -185,7 +195,7 @@ void test_req_page() {
     uint32_t page_table_test[1024];
     kassertneq(request_page(1024, page_table_test, 0), 0,
                "request page failed");
-    kasserteq(buddies[BUDDY_LEVEL(10)] & 0b10, 0b10, "Buddy level 10 not set");
+    kasserteq(buddies[buddy_level(10)] & 0b10, 0b10, "Buddy level 10 not set");
 
     for (int i = 0; i < 1024; i++) {
         char num[4] = "\0\0\0\0";
@@ -198,5 +208,5 @@ void test_req_page() {
         itos(i, num, 4);
         kasserteq(0, page_table_test[i], num);
     }
-    kasserteq(buddies[BUDDY_LEVEL(10)] & 0b10, 0b0, "Buddy level 10 not reset");
+    kasserteq(buddies[buddy_level(10)] & 0b10, 0b0, "Buddy level 10 not reset");
 }

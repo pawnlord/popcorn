@@ -23,6 +23,7 @@ extern void load_tss(unsigned short tss_descriptor);
 extern void load_page_directory(unsigned int *);
 extern void set_current_esp0(void);
 extern void print_esp(void);
+extern void switch_task(ProcessState *state);
 
 extern unsigned char *get_kernel_start(void);
 
@@ -45,11 +46,12 @@ void init_task_manager(void) {
     }
     kernel_task->prev = kernel_task;
     kernel_task->next = kernel_task;
+    kernel_task->curr = 0;
+    active_task = kernel_task;
 }
 
 
 void remove_task(uint8_t pid){
-
     pids_end_idx = (pids_end_idx + 1) % MAX_TASKS;
     available_pids[pids_end_idx] = pid; 
 }
@@ -68,6 +70,8 @@ ProcessState *create_new_task(uint8_t parent_id){
     state->parentID = parent_id;
     state->brk_ptr = (unsigned char*)0x100000;
     state->allocated = 0xFFFFF;
+    state->esp0 = (uint32_t)kmalloc(100000, state);
+    state->curr = 0;
     // Don't start running until actually scheduled
     state->state = TASK_STOPPED;
 }
@@ -82,7 +86,8 @@ void schedule_task(ProcessState *task){
 
 void handle_task_switch(void){
     ProcessState *next_task = active_task->next;
-    load_page_directory((unsigned int *)next_task->page_dir);   
+    switch_task(active_task);
+    active_task = next_task;
 }
 
 
